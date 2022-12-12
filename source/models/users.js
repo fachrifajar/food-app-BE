@@ -21,19 +21,19 @@ const getUsersByID = async (params) => {
 const getEmail = async (params) => {
   const { email } = params
 
-  return await db`SELECT * FROM accounts WHERE email = ${email}`
+  return await db`SELECT email FROM accounts WHERE email = ${email}`
 }
 
 const getUsername = async (params) => {
   const { username } = params
 
-  return await db`SELECT * FROM accounts WHERE username = ${username}`
+  return await db`SELECT username FROM accounts WHERE username = ${username}`
 }
 
 const getPhoneNumber = async (params) => {
   const { phone_number } = params
 
-  return await db`SELECT * FROM accounts WHERE phone_number = ${phone_number}`
+  return await db`SELECT phone_number FROM accounts WHERE phone_number = ${phone_number}`
 }
 
 const getAllUsersPaginationSort = async (params) => {
@@ -60,6 +60,14 @@ const getUsersByName = async (params) => {
   } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
 }
 
+const getUsersByEmail = async (params) => {
+  const { email, limit, page } = params
+
+  return await db`SELECT * FROM accounts WHERE email LIKE ${
+    '%' + email + '%'
+  } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
+}
+
 const updateUsersPartial = async (params) => {
   const {
     email,
@@ -80,6 +88,19 @@ const updateUsersPartial = async (params) => {
   WHERE accounts_id = ${id} `
 }
 
+const deleteUsers = async (params) => {
+  const { id } = params
+
+  return await db`DELETE FROM accounts WHERE accounts_id = ${id}`
+}
+
+const createUsers = async (params) => {
+  const { email, phone_number, username, password } = params
+
+  return await db`INSERT INTO accounts ("email", "phone_number", "username", "password") VALUES
+  (${email}, ${phone_number}, ${username}, ${password})`
+}
+
 module.exports = {
   getAllUsers,
   getUsersByID,
@@ -91,4 +112,7 @@ module.exports = {
   getEmail,
   getUsername,
   getPhoneNumber,
+  deleteUsers,
+  getUsersByEmail,
+  createUsers
 }

@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const usersController = require('../controller/users')
-const middleware = require('../middleware/log')
+const middleware = require('../middleware/users')
 
 // CREATE
 router.post(
@@ -11,7 +11,7 @@ router.post(
 )
 
 // READ
-router.get('/:id?', usersController.getReqAccountByID) // dijalankan dari /controller/users.js
+router.get('/:id?', usersController.getReqAccountByID)
 
 router.get('/name/:username', usersController.getReqUsersByName)
 
@@ -28,8 +28,12 @@ router.put('/edit/all/:id', usersController.updateUsers)
 
 // DELETE
 
-router.delete('/delete/:id', usersController.deleteUsers) // cek lagi ada yg kurang
+router.delete(
+  '/delete/:id',
+  middleware.deleteUsersValidator,
+  usersController.deleteUsers
+) // cek lagi ada yg kurang
 
 // LOGIN //!@ belum
 
-module.exports = router // koneksi file 'users.js' ke file utama
+module.exports = router

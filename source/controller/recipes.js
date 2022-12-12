@@ -1,19 +1,16 @@
 const db = require('../config/database')
+const models = require('../models/recipes')
 
 const getAllRecipes = async (req, res) => {
   try {
     const { titlez } = req.params
     const { page, limit, sort } = req.query
-    const totalDatas =
-      await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id`
+    const totalDatas = await models.getAllRecipesRelation()
     let getUsersData
     let getAllData
-    console.log(titlez)
+
     if (titlez) {
-      getUsersData =
-        await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id  LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id  LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id  LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id WHERE recipes.title LIKE ${
-          '%' + titlez + '%'
-        }`
+      getUsersData = await models.getRecipesByNameRelation({ title: titlez })
       if (getUsersData.length > 0) {
         res.json({
           message: `Get Recipes With titles: ${titlez}`,
@@ -21,12 +18,11 @@ const getAllRecipes = async (req, res) => {
           data: getUsersData,
         })
       } else {
-        throw 'Data not found'
+        throw { code: 422, message: 'Data not found' }
       }
     }
     if (!titlez && !page && !limit && !sort) {
-      getUsersData =
-        await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id`
+      getUsersData = totalDatas
 
       res.json({
         message: 'success get all data users',
@@ -36,48 +32,38 @@ const getAllRecipes = async (req, res) => {
     }
     if (page || limit || sort) {
       if (page && limit && sort) {
-        getAllData =
-          await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id ${
-            sort
-              ? db`ORDER BY recipes.recipes_id DESC`
-              : db`ORDER BY recipes.recipes_id ASC`
-          } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
+        getAllData = await models.getAllRecipesRelationPaginationSort({
+          sort,
+          page,
+          limit,
+        })
       } else if (page && limit) {
-        getAllData =
-          await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id  LIMIT ${limit} OFFSET ${
-            limit * (page - 1)
-          }`
+        getAllData = await models.getAllRecipesRelationPagination({
+          page,
+          limit,
+        })
       } else if (sort) {
-        getAllData =
-          await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id  ${
-            sort
-              ? db`ORDER BY recipes.recipes_id DESC`
-              : db`ORDER BY recipes.recipes_id ASC`
-          } `
+        getAllData = await models.getAllRecipesRelationSort({ sort })
         res.json({
-          message: 'success get data',
+          message: 'success get all data users (Descending)',
           total: totalDatas.length,
           data: getAllData,
         })
       }
     }
+
     if ((page && limit && sort) || (page && limit)) {
-      // if (getAllData > 0) {
       res.json({
-        message: 'success get data',
+        message: 'success get all data users',
         total: totalDatas.length,
         dataPerPage: getAllData.length,
         page: `${page} from ${Math.ceil(totalDatas.length / limit)}`,
         data: getAllData,
       })
-      // } else {
-      //   throw 'Data not found'
-      // }
     }
   } catch (err) {
-    res.status(500).json({
-      message: 'Server Error',
-      serverMessage: `${err}`,
+    res.status(err.code ?? 500).json({
+      message: err,
     })
   }
 }
@@ -85,17 +71,13 @@ const getAllRecipes = async (req, res) => {
 const getAllRecipes2 = async (req, res) => {
   try {
     const { titlez } = req.params
-    const { page, limit, sort } = req.query
-    const totalDatas =
-      await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id`
+    const { page, limit, sortTitle } = req.query
+    const totalDatas = await models.getAllRecipesTitleRelation()
     let getUsersData
     let getAllData
-    console.log(titlez)
+
     if (titlez) {
-      getUsersData =
-        await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id  LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id  LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id  LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id WHERE recipes.title LIKE ${
-          '%' + titlez + '%'
-        }`
+      getUsersData = await models.getRecipesByNameRelation({ title: titlez })
       if (getUsersData.length > 0) {
         res.json({
           message: `Get Recipes With titles: ${titlez}`,
@@ -103,12 +85,11 @@ const getAllRecipes2 = async (req, res) => {
           data: getUsersData,
         })
       } else {
-        throw 'Data not found'
+        throw { code: 422, message: 'Data not found' }
       }
     }
-    if (!titlez && !page && !limit && !sort) {
-      getUsersData =
-        await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id`
+    if (!titlez && !page && !limit && !sortTitle) {
+      getUsersData = totalDatas
 
       res.json({
         message: 'success get all data users',
@@ -116,26 +97,20 @@ const getAllRecipes2 = async (req, res) => {
         data: getUsersData,
       })
     }
-    if (page || limit || sort) {
-      if (page && limit && sort) {
-        getAllData =
-          await db`SELECT DISTINCT ON (recipes.title) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id ${
-            sort
-              ? db`ORDER BY recipes.title DESC`
-              : db`ORDER BY recipes.title ASC`
-          } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
+    if (page || limit || sortTitle) {
+      if (page && limit && sortTitle) {
+        getAllData = await models.getAllRecipesTitleRelationPaginationSort({
+          sortTitle,
+          limit,
+          page,
+        })
       } else if (page && limit) {
-        getAllData =
-          await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id  LIMIT ${limit} OFFSET ${
-            limit * (page - 1)
-          }`
-      } else if (sort) {
-        getAllData =
-          await db`SELECT DISTINCT ON (recipes.title) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id  ${
-            sort
-              ? db`ORDER BY recipes.title DESC`
-              : db`ORDER BY recipes.title ASC`
-          } `
+        getAllData = await models.getAllRecipesTitleRelationPagination({
+          limit,
+          page,
+        })
+      } else if (sortTitle) {
+        getAllData = await models.getAllRecipesTitleRelationSort({ sortTitle })
         res.json({
           message: 'success get data',
           total: totalDatas.length,
@@ -143,7 +118,7 @@ const getAllRecipes2 = async (req, res) => {
         })
       }
     }
-    if ((page && limit && sort) || (page && limit)) {
+    if ((page && limit && sortTitle) || (page && limit)) {
       // if (getAllData > 0) {
       res.json({
         message: 'success get data',
@@ -157,9 +132,8 @@ const getAllRecipes2 = async (req, res) => {
       // }
     }
   } catch (err) {
-    res.status(500).json({
-      message: 'Server Error',
-      serverMessage: `${err}`,
+    res.status(err.code ?? 500).json({
+      message: err,
     })
   }
 }
@@ -167,47 +141,29 @@ const getAllRecipes2 = async (req, res) => {
 const addRecipes = async (req, res) => {
   try {
     const { accounts_id, title, ingredients } = req.body
-    const checkID =
-      await db`SELECT * FROM accounts WHERE accounts_id = ${accounts_id}`
+    const checkID = await models.checkAccByID({ accounts_id })
 
     if (checkID.length == 0) {
-      return res.status(403).json({
-        message: 'ID not identified',
-      })
+      throw { code: 422, message: 'ID not identified' }
     }
 
-    if (title.length < 4) {
-      return res.status(403).json({
-        message: 'Title must have atleast 4 characters',
-      })
-    }
-    if (title.length == 0) {
-      return res.status(403).json({
-        message: "Title can't be empty",
-      })
-    }
-    if (ingredients.length < 3) {
-      return res.status(403).json({
-        message: 'Ingredients must have atleast 4 characters',
-      })
-    }
-    if (ingredients.length == 0) {
-      return res.status(403).json({
-        message: "ingredients can't be empty",
-      })
-    }
-
-    const addRecipes =
-      await db`INSERT INTO recipes ("accounts_id", "title", "ingredients") VALUES (${accounts_id}, ${title}, ${ingredients})`
+    const addRecipes = await models.addRecipes({
+      accounts_id,
+      title,
+      ingredients,
+    })
     res.json({
       message: 'data collected',
       data: req.body,
     })
-    console.log(req.body)
   } catch (error) {
+    res.status(error.code ?? 500).json({
+      message: error,
+    })
+
     if (error.code == 23505) {
-      const getTitle =
-        await db`SELECT * FROM recipes WHERE title = ${req.body.title}`
+      const { title } = req.body
+      const getTitle = await models.checkRecipesByTitle({ title })
       if (getTitle.length !== 0) {
         {
           res.status(403).json({
@@ -222,34 +178,28 @@ const addRecipes = async (req, res) => {
 const addVideos = async (req, res) => {
   try {
     const { recipes_id, video } = req.body
-    const checkRecipesID =
-      await db`SELECT recipes_id FROM recipes where recipes_id = ${recipes_id}`
-    const checkAccID =
-      await db`SELECT accounts_id FROM recipes where recipes_id = ${recipes_id}`
+    const checkRecipesID = await models.checkRecipesIDbyRecipesID({
+      recipes_id,
+    })
+    const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
     if (checkRecipesID.length == 0) {
-      return res.status(403).json({
-        message: 'ID not identified',
-      })
+      throw { code: 422, message: 'ID not identified' }
     }
 
-    if (video.length == 0) {
-      return res.status(403).json({
-        message: 'Please upload video link',
-      })
-    }
-
-    const addVideo =
-      await db`INSERT INTO recipe_videos ("recipes_id","video", "accounts_id") VALUES (${recipes_id}, ${video}, ${checkAccID[0].accounts_id})`
+    const addVideo = models.addVideos({
+      recipes_id,
+      video,
+      accounts_id: checkAccID[0].accounts_id,
+      checkAccID,
+    })
     res.json({
       message: 'data collected',
       data: req.body,
     })
-    console.log(req.body)
   } catch (err) {
-    res.status(500).json({
-      message: 'Server Error',
-      serverMessage: `${err}`,
+    res.status(err.code ?? 500).json({
+      message: err,
     })
   }
 }
@@ -257,34 +207,28 @@ const addVideos = async (req, res) => {
 const addPhotos = async (req, res) => {
   try {
     const { recipes_id, photo } = req.body
-    const checkRecipesID =
-      await db`SELECT recipes_id FROM recipes where recipes_id = ${recipes_id}`
-    const checkAccID =
-      await db`SELECT accounts_id FROM recipes where recipes_id = ${recipes_id}`
+    const checkRecipesID = await models.checkRecipesIDbyRecipesID({
+      recipes_id,
+    })
+    const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
     if (checkRecipesID.length == 0) {
-      return res.status(403).json({
-        message: 'ID not identified',
-      })
+      throw { code: 422, message: 'ID not identified' }
     }
 
-    if (photo.length == 0) {
-      return res.status(403).json({
-        message: 'Please upload photo link',
-      })
-    }
-
-    const addPhoto =
-      await db`INSERT INTO recipe_photos ("recipes_id","photo", "accounts_id") VALUES (${recipes_id}, ${photo}, ${checkAccID[0].accounts_id})`
+    const addPhoto = await models.addPhotos({
+      recipes_id,
+      photo,
+      accounts_id: checkAccID[0].accounts_id,
+      checkAccID,
+    })
     res.json({
       message: 'data collected',
       data: req.body,
     })
-    console.log(req.body)
   } catch (err) {
-    res.status(500).json({
-      message: 'Server Error',
-      serverMessage: `${err}`,
+    res.status(err.code ?? 500).json({
+      message: err,
     })
   }
 }
@@ -293,40 +237,23 @@ const addComments = async (req, res) => {
   try {
     const { id } = req.params
     const { recipes_id, comment } = req.body
-    const checkRecipesID =
-      await db`SELECT recipes_id FROM recipes where recipes_id = ${recipes_id}`
-    const checkAccID =
-      await db`SELECT accounts_id FROM recipes where recipes_id = ${id}`
-
-    if (checkAccID.length == 0) {
-      return res.status(403).json({
-        message: 'User not identified',
-      })
-    }
+    const checkRecipesID = await models.checkRecipesIDbyRecipesID({
+      recipes_id,
+    })
+    const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
     if (checkRecipesID.length == 0) {
-      return res.status(403).json({
-        message: 'ID not identified',
-      })
+      throw { code: 422, message: 'ID not identified' }
     }
 
-    if (comment.length == 0) {
-      return res.status(403).json({
-        message: "Comment can't be empty",
-      })
-    }
-
-    const addcomment =
-      await db`INSERT INTO comments ("recipes_id","comment", "accounts_id") VALUES (${recipes_id}, ${comment}, ${id})`
+    const addcomment = await models.addComments({ recipes_id, comment, id })
     res.json({
       message: 'data collected',
       data: req.body,
     })
-    console.log(req.body)
   } catch (err) {
-    res.status(500).json({
-      message: 'Server Error',
-      serverMessage: `${err}`,
+    res.status(err.code ?? 500).json({
+      message: err,
     })
   }
 }
@@ -343,97 +270,39 @@ const updateRecipes = async (req, res) => {
       video,
       comment,
     } = req.body
-    const getAllData = await db`SELECT * FROM recipes WHERE recipes_id = ${id}`
-
-    const regexURL =
-      /(?:https?):\/\/(\w+:?\w*)?(\S+)(:\d+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/g
+    const getAllData = await models.getRecipesByRecipesID({ id })
 
     if (
       (recipes_id || accounts_id || title || ingredients) !== undefined &&
       (photo || video) == undefined &&
       comment == undefined
     ) {
-      if (getAllData.length > 0) {
-        if (recipes_id) {
-          return res.status(403).json({
-            message: "CAN'T CHANGE THIS CONTENT!!!",
-          })
-        }
-
-        if (accounts_id) {
-          return res.status(403).json({
-            message: "CAN'T CHANGE THIS CONTENT!!!",
-          })
-        }
-
-        if (title) {
-          if (title.length < 4 || title.length > 20) {
-            return res.status(403).json({
-              message: 'Title must have atleast 4 characters',
-            })
-          }
-        } else if (title == '') {
-          return res.status(403).json({
-            message: "Title can't be empty",
-          })
-        }
-        if (ingredients) {
-          if (ingredients.length <= 10) {
-            return res.status(403).json({
-              message: 'Ingredients must have atleast 10 characters',
-            })
-          }
-        } else if (ingredients == '') {
-          return res.status(403).json({
-            message: "ingredients can't be empty",
-          })
-        }
-        const editRecipes = await db`UPDATE recipes
-      SET title = ${title || getAllData[0]?.title},
-        ingredients = ${ingredients || getAllData[0]?.ingredients}
-      WHERE recipes_id = ${id} `
-      } else {
-        return res.status(403).json({
-          message: 'ID not identified',
-        })
+      if (getAllData.length == 0) {
+        throw { code: 422, message: 'accounts_ID not identified' }
       }
+
+      const editRecipes = await models.editRecipes({ title, ingredients, id })
     }
     if (
       (recipes_id || accounts_id || title || ingredients) == undefined &&
       (photo || video) !== undefined &&
       comment == undefined
     ) {
-      const checkVidID =
-        await db`SELECT * FROM recipe_videos WHERE videos_id = ${id}`
-      const checkPhtID =
-        await db`SELECT * FROM recipe_photos WHERE photos_id = ${id}`
-
-      if (checkPhtID.length !== 1 && checkVidID.length !== 1) {
-        return res.status(403).json({
-          message: 'ID not identified',
-        })
-      }
+      const checkVidID = await models.checkVideosByID({ id })
+      const checkPhtID = await models.checkPhotosByID({ id })
 
       if (photo !== undefined && video == undefined) {
-        if (regexURL.test(photo) == false) {
-          return res.status(403).json({
-            message: 'Please insert valid photo URL',
-          })
+        if (checkPhtID.length !== 1) {
+          throw { code: 422, message: 'photos_ID not identified' }
         }
-        const editPhotos = await db`UPDATE recipe_photos
-            SET photo = ${photo || checkPhtID[0]?.photo}
-            WHERE photos_id = ${id}`
+        const editPhotos = await models.editPhotos({ photo, checkPhtID, id })
       }
 
       if (video !== undefined && photo == undefined) {
-        if (regexURL.test(video) == false) {
-          return res.status(403).json({
-            message: 'Please insert valid video URL',
-          })
+        if (checkVidID.length !== 1) {
+          throw { code: 422, message: 'videos_ID not identified' }
         }
-        const editvideos = await db`UPDATE recipe_videos
-              SET video = ${video || checkVidID[0]?.video}
-              WHERE videos_id = ${id}`
+        const editvideos = await models.editVideos({ video, checkVidID, id })
       }
     }
     if (
@@ -441,23 +310,17 @@ const updateRecipes = async (req, res) => {
       (photo || video) == undefined &&
       comment !== undefined
     ) {
-      const checkCommID =
-        await db`SELECT * FROM comments WHERE comments_id = ${id}`
-      console.log(checkCommID)
-      if (comment.length < 3) {
-        return res.status(403).json({
-          message: 'Comment must have atleast 4 characters',
-        })
-      }
+      const checkCommID = await models.checkComment({ id })
+
       if (checkCommID.length !== 1) {
-        return res.status(403).json({
-          message: 'ID not identified',
-        })
+        throw { code: 422, message: 'comments_ID not identified' }
       }
 
-      const editComments = await db`UPDATE comments
-              SET comment = ${comment || checkVidID[0]?.comment}
-              WHERE comments_id = ${id}`
+      const editComments = await models.editComments({
+        comment,
+        checkCommID,
+        id,
+      })
     }
     res.json({
       message: 'Data updated',
@@ -467,9 +330,8 @@ const updateRecipes = async (req, res) => {
       },
     })
   } catch (err) {
-    res.status(500).json({
-      message: 'Server Error',
-      serverMessage: `${err}`,
+    res.status(err.code ?? 500).json({
+      message: err,
     })
   }
 }
@@ -477,15 +339,13 @@ const updateRecipes = async (req, res) => {
 const deleteRecipes = async (req, res) => {
   try {
     const { id } = req.params
-    const validator = await db`SELECT * FROM recipes WHERE recipes_id = ${id}`
-
-    console.log(req.body)
+    const validator = await models.getRecipesByRecipesID({ id })
 
     if (validator.length !== 0) {
-      await db`DELETE FROM recipes WHERE recipes_id = ${id}`
+      await models.deleteRecipes({ id })
     } else {
-      res.status(403).json({
-        message: 'ID not identified',
+      res.status(422).json({
+        message: 'Recipes_ID not identified',
       })
     }
     res.json({
@@ -495,7 +355,7 @@ const deleteRecipes = async (req, res) => {
   } catch (err) {
     res.status(500).json({
       message: 'Server Error',
-      serverMessage: `${err}`,
+      serverMessage: err,
     })
   }
 }
@@ -503,16 +363,15 @@ const deleteRecipes = async (req, res) => {
 const deleteVideos = async (req, res) => {
   try {
     const { id } = req.params
-    const validator =
-      await db`SELECT * FROM recipe_videos WHERE videos_id = ${id}`
+    const validator = await models.getRecipesVidByVidID({ id })
 
     console.log(req.body)
 
     if (validator.length !== 0) {
-      await db`DELETE FROM recipe_videos WHERE videos_id = ${id}`
+      await models.deleteVideos({ id })
     } else {
-      res.status(403).json({
-        message: 'ID not identified',
+      res.status(422).json({
+        message: 'Videos_ID not identified',
       })
     }
     res.json({
@@ -530,15 +389,14 @@ const deleteVideos = async (req, res) => {
 const deletePhotos = async (req, res) => {
   try {
     const { id } = req.params
-    const validator =
-      await db`SELECT * FROM recipe_photos WHERE photos_id = ${id}`
+    const validator = await models.getRecipesPhtByPhtID({ id })
 
     console.log(req.body)
 
     if (validator.length !== 0) {
-      await db`DELETE FROM recipe_photos WHERE photos_id = ${id}`
+      await models.deletePhotos({ id })
     } else {
-      res.status(403).json({
+      res.status(422).json({
         message: 'ID not identified',
       })
     }
@@ -557,15 +415,13 @@ const deletePhotos = async (req, res) => {
 const deleteComments = async (req, res) => {
   try {
     const { id } = req.params
-    const validator = await db`SELECT * FROM comments WHERE comments_id = ${id}`
-
-    console.log(req.body)
+    const validator = await models.getCommentsByCommentsID({ id })
 
     if (validator.length !== 0) {
-      await db`DELETE FROM comments WHERE comments_id = ${id}`
+      await models.deleteComments({ id })
     } else {
-      res.status(403).json({
-        message: 'ID not identified',
+      res.status(422).json({
+        message: 'Comments_ID not identified',
       })
     }
     res.json({
@@ -593,5 +449,3 @@ module.exports = {
   deletePhotos,
   deleteComments,
 }
-
-//      await db`SELECT accounts.username, recipes.title, recipes.ingredients, recipe_photos.photo, recipe_videos.video, comments.comment, recipes.created_at FROM recipes LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id LEFT JOIN comments ON recipes.accounts_id = comments.accounts_id`

@@ -1,5 +1,4 @@
 require('dotenv').config()
-const usersRoutes = require('./routes/users')
 const middleware = require('./middleware/log')
 const helmet = require('helmet')
 const xss = require('xss-clean')
@@ -7,6 +6,11 @@ const cors = require('cors')
 const PORT = process.env.PORT || 4999
 const express = require('express')
 const app = express()
+const bodyParser = require('body-parser')
+
+//koneksi body-parser
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
 //koneksi cors
 app.use(cors())
@@ -22,6 +26,7 @@ app.use(helmet())
 app.use(xss())
 
 // koneksi routes
+const usersRoutes = require('./routes/users')
 app.use('/users', usersRoutes)
 app.use('/users/recipes', require('./routes/recipes'))
 
