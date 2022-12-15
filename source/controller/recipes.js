@@ -1,5 +1,7 @@
 const db = require('../config/database')
 const models = require('../models/recipes')
+const { v4: uuidv4 } = require('uuid')
+const path = require('path')
 
 const getAllRecipes = async (req, res) => {
   try {
@@ -144,7 +146,7 @@ const addRecipes = async (req, res) => {
     const checkID = await models.checkAccByID({ accounts_id })
 
     if (checkID.length == 0) {
-      throw { code: 422, message: 'ID not identified' }
+      throw { code: 400, message: 'ID not identified' }
     }
 
     const addRecipes = await models.addRecipes({
@@ -184,19 +186,32 @@ const addVideos = async (req, res) => {
     const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
     if (checkRecipesID.length == 0) {
-      throw { code: 422, message: 'ID not identified' }
+      throw { code: 400, message: 'ID not identified' }
     }
 
-    const addVideo = models.addVideos({
-      recipes_id,
-      video,
-      accounts_id: checkAccID[0].accounts_id,
-      checkAccID,
-    })
-    res.json({
-      message: 'data collected',
-      data: req.body,
-    })
+    if (req.files) {
+      let file = req.files.video
+      let fileName = `${uuidv4()}-${file.name}`
+      let rootDir = path.dirname(require.main.filename)
+
+      let uploadPath = `${rootDir}/images/recipes/videos/${fileName}`
+
+      file.mv(uploadPath, async function (err) {
+        if (err) {
+          throw { message: 'Upload failed' }
+        }
+      })
+      models.addVideos({
+        recipes_id,
+        video: `/static/recipes/videos/${fileName}`,
+        accounts_id: checkAccID[0].accounts_id,
+        checkAccID,
+      })
+      res.json({
+        message: 'video uploaded',
+        data: req.body,
+      })
+    }
   } catch (err) {
     res.status(err.code ?? 500).json({
       message: err,
@@ -211,23 +226,34 @@ const addPhotos = async (req, res) => {
       recipes_id,
     })
     const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
-
     if (checkRecipesID.length == 0) {
-      throw { code: 422, message: 'ID not identified' }
+      throw { code: 400, message: 'ID not identified' }
     }
+    if (req.files) {
+      let file = req.files.photo
+      let fileName = `${uuidv4()}-${file.name}`
+      let rootDir = path.dirname(require.main.filename)
 
-    const addPhoto = await models.addPhotos({
-      recipes_id,
-      photo,
-      accounts_id: checkAccID[0].accounts_id,
-      checkAccID,
-    })
-    res.json({
-      message: 'data collected',
-      data: req.body,
-    })
+      let uploadPath = `${rootDir}/images/recipes/photos/${fileName}`
+
+      file.mv(uploadPath, async function (err) {
+        if (err) {
+          throw { message: 'Upload failed' }
+        }
+      })
+      await models.addPhotos({
+        recipes_id,
+        photo: `/static/recipes/photos/${fileName}`,
+        accounts_id: checkAccID[0].accounts_id,
+        checkAccID,
+      })
+      res.json({
+        message: 'photo uploaded',
+        data: req.body,
+      })
+    }
   } catch (err) {
-    res.status(err.code ?? 500).json({
+    res.status(err?.code ?? 500).json({
       message: err,
     })
   }
@@ -243,7 +269,7 @@ const addComments = async (req, res) => {
     const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
     if (checkRecipesID.length == 0) {
-      throw { code: 422, message: 'ID not identified' }
+      throw { code: 400, message: 'ID not identified' }
     }
 
     const addcomment = await models.addComments({ recipes_id, comment, id })
@@ -278,10 +304,15 @@ const updateRecipes = async (req, res) => {
       comment == undefined
     ) {
       if (getAllData.length == 0) {
-        throw { code: 422, message: 'accounts_ID not identified' }
+        throw { code: 400, message: 'accounts_ID not identified' }
       }
 
-      const editRecipes = await models.editRecipes({ title, ingredients, id })
+      const editRecipes = await models.editRecipes({
+        title,
+        ingredients,
+        id,
+        getAllData: getAllData[0],
+      })
     }
     if (
       (recipes_id || accounts_id || title || ingredients) == undefined &&
@@ -292,17 +323,67 @@ const updateRecipes = async (req, res) => {
       const checkPhtID = await models.checkPhotosByID({ id })
 
       if (photo !== undefined && video == undefined) {
+        let file = req.files.photo
+        let fileName = `${uuidv4()}-${file.name}`
+        let rootDir = path.dirname(require.main.filename)
+
+        let uploadPath = `${rootDir}/images/users/photos/${fileName}`
+
         if (checkPhtID.length !== 1) {
-          throw { code: 422, message: 'photos_ID not identified' }
+          throw { code: 400, message: 'photos_ID not identified' }
+        } else {
+          file.mv(uploadPath, async function (err) {
+            if (err) {
+              throw { message: 'Upload failed' }
+            }
+          })
+          const editPhotos = await models.editPhotos({
+            photo: `/static/recipes/photos/${fileName}`,
+            checkPhtID,
+            id,
+          })
+
+          res.json({
+            status: 'true',
+            message: 'photo updated',
+            data: {
+              id,
+              ...req.body,
+            },
+          })
         }
-        const editPhotos = await models.editPhotos({ photo, checkPhtID, id })
       }
 
       if (video !== undefined && photo == undefined) {
+        let file = req.files.video
+        let fileName = `${uuidv4()}-${file.name}`
+        let rootDir = path.dirname(require.main.filename)
+
+        let uploadPath = `${rootDir}/images/users/videos/${fileName}`
+
         if (checkVidID.length !== 1) {
-          throw { code: 422, message: 'videos_ID not identified' }
+          throw { code: 400, message: 'videos_ID not identified' }
+        } else {
+          file.mv(uploadPath, async function (err) {
+            if (err) {
+              throw { message: 'Upload failed' }
+            }
+          })
+          const editvideos = await models.editVideos({
+            video: `/static/recipes/videos/${fileName}`,
+            checkVidID,
+            id,
+          })
+
+          res.json({
+            status: 'true',
+            message: 'photo updated',
+            data: {
+              id,
+              ...req.body,
+            },
+          })
         }
-        const editvideos = await models.editVideos({ video, checkVidID, id })
       }
     }
     if (
@@ -313,12 +394,12 @@ const updateRecipes = async (req, res) => {
       const checkCommID = await models.checkComment({ id })
 
       if (checkCommID.length !== 1) {
-        throw { code: 422, message: 'comments_ID not identified' }
+        throw { code: 400, message: 'comments_ID not identified' }
       }
 
       const editComments = await models.editComments({
         comment,
-        checkCommID,
+        checkCommID: checkCommID[0],
         id,
       })
     }
@@ -344,7 +425,7 @@ const deleteRecipes = async (req, res) => {
     if (validator.length !== 0) {
       await models.deleteRecipes({ id })
     } else {
-      res.status(422).json({
+      res.status(400).json({
         message: 'Recipes_ID not identified',
       })
     }
@@ -370,7 +451,7 @@ const deleteVideos = async (req, res) => {
     if (validator.length !== 0) {
       await models.deleteVideos({ id })
     } else {
-      res.status(422).json({
+      res.status(400).json({
         message: 'Videos_ID not identified',
       })
     }
@@ -396,7 +477,7 @@ const deletePhotos = async (req, res) => {
     if (validator.length !== 0) {
       await models.deletePhotos({ id })
     } else {
-      res.status(422).json({
+      res.status(400).json({
         message: 'ID not identified',
       })
     }
@@ -420,7 +501,7 @@ const deleteComments = async (req, res) => {
     if (validator.length !== 0) {
       await models.deleteComments({ id })
     } else {
-      res.status(422).json({
+      res.status(400).json({
         message: 'Comments_ID not identified',
       })
     }
@@ -449,3 +530,19 @@ module.exports = {
   deletePhotos,
   deleteComments,
 }
+
+/**
+ *       // if (photo !== undefined && video == undefined) {
+      //   if (checkPhtID.length !== 1) {
+      //     throw { code: 400, message: 'photos_ID not identified' }
+      //   }
+      //   const editPhotos = await models.editPhotos({ photo, checkPhtID, id })
+      // }
+
+      // if (video !== undefined && photo == undefined) {
+      //   if (checkVidID.length !== 1) {
+      //     throw { code: 400, message: 'videos_ID not identified' }
+      //   }
+      //   const editvideos = await models.editVideos({ video, checkVidID, id })
+      // }
+ */

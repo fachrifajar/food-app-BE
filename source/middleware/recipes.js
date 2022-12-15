@@ -21,7 +21,6 @@ const createRecipesValidator = (req, res, next) => {
 const addVideosValidator = (req, res, next) => {
   const rules = new Validator(req.body, {
     recipes_id: 'required',
-    video: 'required|url',
   })
 
   rules.check().then((matched) => {
@@ -38,7 +37,6 @@ const addVideosValidator = (req, res, next) => {
 const addPhotoValidator = (req, res, next) => {
   const rules = new Validator(req.body, {
     recipes_id: 'required',
-    photo: 'required|url',
   })
 
   rules.check().then((matched) => {

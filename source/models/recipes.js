@@ -123,11 +123,11 @@ const getRecipesByRecipesID = async (params) => {
 }
 
 const editRecipes = async (params) => {
-  const { title, ingredients, id } = params
+  const { title, ingredients, id, getAllData } = params
 
   return await db`UPDATE recipes
-    SET title = ${title || getAllData[0]?.title},
-      ingredients = ${ingredients || getAllData[0]?.ingredients}
+    SET title = ${title || getAllData?.title},
+      ingredients = ${ingredients || getAllData?.ingredients}
     WHERE recipes_id = ${id} `
 }
 
@@ -169,7 +169,7 @@ const editComments = async (params) => {
   const { comment, checkCommID, id } = params
 
   return await db`UPDATE comments
-    SET comment = ${comment || checkCommID[0]?.comment}
+    SET comment = ${comment || checkCommID?.comment}
     WHERE comments_id = ${id}`
 }
 

@@ -75,16 +75,16 @@ const updateUsersPartial = async (params) => {
     username,
     password,
     profile_picture,
+    defaultValue,
     id,
-    getAllData,
   } = params
 
   return await db`UPDATE accounts
-  SET email = ${email || getAllData[0]?.email},
-   phone_number = ${phone_number || getAllData[0]?.phone_number},
-   username = ${username || getAllData[0]?.username},
-   password =${password || getAllData[0]?.password},
-   profile_picture = ${profile_picture || getAllData[0]?.profile_picture}
+  SET email = ${email || defaultValue?.email},
+   phone_number = ${phone_number || defaultValue?.phone_number},
+   username = ${username || defaultValue?.username},
+   password =${password || defaultValue?.password},
+   profile_picture = ${profile_picture || defaultValue?.profile_picture}
   WHERE accounts_id = ${id} `
 }
 
@@ -95,10 +95,19 @@ const deleteUsers = async (params) => {
 }
 
 const createUsers = async (params) => {
-  const { email, phone_number, username, password } = params
+  const {
+    email,
+    phone_number,
+    username,
+    password,
+    profile_picture,
+    defaultPicture,
+  } = params
 
-  return await db`INSERT INTO accounts ("email", "phone_number", "username", "password") VALUES
-  (${email}, ${phone_number}, ${username}, ${password})`
+  return await db`INSERT INTO accounts ("email", "phone_number", "username", "password", "profile_picture") VALUES
+  (${email}, ${phone_number}, ${username}, ${password}, ${
+    profile_picture || defaultPicture
+  })`
 }
 
 module.exports = {
@@ -114,5 +123,5 @@ module.exports = {
   getPhoneNumber,
   deleteUsers,
   getUsersByEmail,
-  createUsers
+  createUsers,
 }
