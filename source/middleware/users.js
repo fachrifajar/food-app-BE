@@ -32,14 +32,16 @@ const createUsersValidator = (req, res, next) => {
     'username.namePassswordValidator': `Password can't contain username`,
     'password.regexUsername': `Username can only contain Alphanumeric Characters`,
     'password.regexPass': `Passwords must have at least 8 characters and contain uppercase letters, lowercase letters, numbers, and symbols`,
+    'profile_picture.required': `Missing files`,
   })
 
   const rules = new Validator(req.body, {
-    email: 'required|email|minLength:3|maxLength:30',
+    email: 'required|email|minLength:3|maxLength:100',
     phone_number: 'required|phoneNumber|minLength:7|maxLength:14',
     username:
       'required|minLength:5|maxLength:15|regexUsername|namePassswordValidator',
     password: 'required|regexPass|minLength:8|maxLength:20',
+    profile_picture: req.body.profile_picture == '' ? 'required|url' : 'url',
   })
 
   rules.check().then((matched) => {
@@ -54,8 +56,7 @@ const createUsersValidator = (req, res, next) => {
 }
 
 const updateUsersPartialValidator = (req, res, next) => {
-  const { email, phone_number, username, password, profile_picture, id } =
-    req.body
+  const { email, phone_number, username, password, profile_picture } = req.body
 
   extend('namePassswordValidator', () => {
     if (req.body.username !== req.body.password) {
@@ -91,19 +92,23 @@ const updateUsersPartialValidator = (req, res, next) => {
   })
 
   const rules = new Validator(req.body, {
-    email: email == ''
-      ? 'required|email|minLength:3|maxLength:30'
-      : 'email|minLength:3|maxLength:20',
-    phone_number: phone_number == ''
-      ? 'required|phoneNumber|minLength:7|maxLength:14'
-      : 'phoneNumber|minLength:7|maxLength:12',
-    username: username == ''
-      ? 'required|minLength:5|maxLength:15|regexUsername|namePassswordValidator'
-      : 'minLength:5|maxLength:11|regexUsername|namePassswordValidator',
-    password: password == ''
-      ? 'required|regexPass|minLength:8|maxLength:20'
-      : 'regexPass|minLength:8|maxLength:20',
-    profile_picture: profile_picture ? 'required|url' : 'url',
+    email:
+      email == ''
+        ? 'required|email|minLength:3|maxLength:100'
+        : 'email|minLength:3|maxLength:100',
+    phone_number:
+      phone_number == ''
+        ? 'required|phoneNumber|minLength:7|maxLength:14'
+        : 'phoneNumber|minLength:7|maxLength:12',
+    username:
+      username == ''
+        ? 'required|minLength:5|maxLength:15|regexUsername|namePassswordValidator'
+        : 'minLength:5|maxLength:11|regexUsername|namePassswordValidator',
+    password:
+      password == ''
+        ? 'required|regexPass|minLength:8|maxLength:20'
+        : 'regexPass|minLength:8|maxLength:20',
+    profile_picture: profile_picture == '' ? 'required|url' : 'url',
   })
 
   rules.check().then((matched) => {

@@ -7,6 +7,8 @@ const PORT = process.env.PORT || 4999
 const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
+const fileUpload = require('express-fileupload')
+const path = require('path')
 
 //koneksi body-parser
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -25,6 +27,19 @@ app.use(helmet())
 // koneksi xss
 app.use(xss())
 
+// koneksi express-fileupload
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: '/tmp/',
+  })
+)
+
+// grant privilege to access file
+
+app.use('/static', express.static(path.join(__dirname, 'images')))
+// app.use(express.static('images'))
+
 // koneksi routes
 const usersRoutes = require('./routes/users')
 app.use('/users', usersRoutes)
@@ -36,7 +51,7 @@ app.get('/', (req, res) => {
   })
 })
 
-app.use(middleware.urlValidator)
+// app.use(middleware.urlValidator)
 
 app.listen(PORT, () => {
   console.log(`server running on port ${PORT}`)
