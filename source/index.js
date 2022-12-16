@@ -19,7 +19,7 @@ app.use(cors())
 
 // koneksi middleware
 app.use(middleware.logRequest)
-app.use(express.json()) // body-parser, menggunakan middleware
+// app.use(express.json()) // body-parser, menggunakan middleware
 
 // koneksi helmet
 app.use(helmet())

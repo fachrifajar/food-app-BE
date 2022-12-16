@@ -180,7 +180,7 @@ const createUsers = async (req, res) => {
       let file = req.files.profile_picture
       let fileName = `${uuidv4()}-${file.name}`
       let rootDir = path.dirname(require.main.filename)
-
+      // console.log(file)
       let uploadPath = `${rootDir}/images/users/${fileName}`
 
       // Use the mv() method to place the file somewhere on your server
