@@ -22,7 +22,7 @@ router.post(
     '.avichd',
     '.flv',
     '.mkv',
-    'html5',
+    '.html5',
     '.MP4',
     '.MOV',
     '.WMV',
@@ -30,7 +30,7 @@ router.post(
     '.AVICHD',
     '.FLV',
     '.MKV',
-    'HTML5',
+    '.HTML5',
   ]),
   middlewareUpload.vidSizeLimiter,
   middleware.addVideosValidator,
@@ -60,40 +60,12 @@ router.post(
 )
 
 // READ
-router.get('/search/:titlez?', recipesController.getAllRecipes)
+router.get('/search/:titlez?', recipesController.getAllRecipes) // sort by created_at / recipes_id
 router.get('/search-2/:titlez?', recipesController.getAllRecipes2) //sort by nama
 
-// UPDATE // error solved, sepertinya tidak bisa digabung patch untuk vid dan photo. karena middleware akan bertabrakan
+// UPDATE // error solved. untuk issue baru upload photo dan vid sepertinya tidak bisa digabung patch untuk vid dan photo. karena middleware akan bertabrakan
 router.patch(
   '/edit/:id',
-  middlewareUpload.fileExtLimiter([
-    '.png',
-    '.jpg',
-    '.jpeg',
-    '.PNG',
-    '.JPG',
-    '.JPEG',
-  ]),
-  middlewareUpload.fileSizeLimiter,
-  middlewareUpload.vidExtLimiter([
-    '.mp4',
-    '.mov',
-    '.wmv',
-    '.avi',
-    '.avichd',
-    '.flv',
-    '.mkv',
-    'html5',
-    '.MP4',
-    '.MOV',
-    '.WMV',
-    '.AVI',
-    '.AVICHD',
-    '.FLV',
-    '.MKV',
-    'HTML5',
-  ]),
-  middlewareUpload.vidSizeLimiter,
   middleware.updateRecipesValidator,
   recipesController.updateRecipes
 )
