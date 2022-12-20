@@ -1,3 +1,4 @@
+const cloudinary = require('cloudinary')
 const path = require('path')
 const MB = 2
 const FILE_SIZE_LIMIT = MB * 1024 * 1024
@@ -166,10 +167,17 @@ const vidExtLimiter = (allowedExtArray) => {
   }
 }
 
+cloudinary.config({
+  cloud_name: 'daouvimjz',
+  api_key: '549719657447986',
+  api_secret: 'RPLtU02NLI2HxgwH2j29P4mHw7Y',
+})
+
 module.exports = {
   filesPayLoadExist,
   fileSizeLimiter,
   fileExtLimiter,
   vidSizeLimiter,
   vidExtLimiter,
+  cloudinary,
 }

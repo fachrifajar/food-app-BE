@@ -9,6 +9,10 @@ const app = express()
 const bodyParser = require('body-parser')
 const fileUpload = require('express-fileupload')
 const path = require('path')
+const cookieParser = require('cookie-parser')
+
+//koneksi cookie-parser
+app.use(cookieParser())
 
 //koneksi body-parser
 app.use(bodyParser.urlencoded({ extended: false }))
@@ -44,6 +48,7 @@ app.use('/static', express.static(path.join(__dirname, 'images')))
 const usersRoutes = require('./routes/users')
 app.use('/users', usersRoutes)
 app.use('/users/recipes', require('./routes/recipes'))
+app.use('/auth', require('./routes/auth'))
 
 app.get('/', (req, res) => {
   res.json({
