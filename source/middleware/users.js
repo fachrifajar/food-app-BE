@@ -34,12 +34,12 @@ const createUsersValidator = (req, res, next) => {
     'password.regexPass': `Passwords must have at least 8 characters and contain uppercase letters, lowercase letters, numbers, and symbols`,
     'profile_picture.required': `Missing files`,
   })
-
+  //password: 'required|regexPass|minLength:8|maxLength:20',
   const rules = new Validator(req.body, {
     email: 'required|email|minLength:3|maxLength:100',
     phone_number: 'required|phoneNumber|minLength:7|maxLength:14',
     username:
-      'required|minLength:5|maxLength:15|regexUsername|namePassswordValidator',
+      'required|minLength:5|maxLength:25|regexUsername|namePassswordValidator',
     password: 'required|regexPass|minLength:8|maxLength:20',
     profile_picture: req.body.profile_picture == '' ? 'required|url' : 'url',
   })

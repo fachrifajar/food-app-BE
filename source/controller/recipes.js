@@ -321,7 +321,7 @@ const updateRecipes = async (req, res) => {
         (photo || video) == undefined &&
         comment !== undefined
       ) {
-        console.log('test')
+  
         const checkCommID = await models.checkComment({ id })
 
         if (checkCommID.length !== 1) {
@@ -491,7 +491,7 @@ const deleteVideos = async (req, res) => {
     const { id } = req.params
     const validator = await models.getRecipesVidByVidID({ id })
 
-    console.log(req.body)
+
 
     if (validator.length !== 0) {
       await models.deleteVideos({ id })
@@ -517,7 +517,7 @@ const deletePhotos = async (req, res) => {
     const { id } = req.params
     const validator = await models.getRecipesPhtByPhtID({ id })
 
-    console.log(req.body)
+   
 
     if (validator.length !== 0) {
       await models.deletePhotos({ id })
