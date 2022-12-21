@@ -102,8 +102,8 @@ const updateUsersPartialValidator = (req, res, next) => {
         : 'phoneNumber|minLength:7|maxLength:12',
     username:
       username == ''
-        ? 'required|minLength:5|maxLength:15|regexUsername|namePassswordValidator'
-        : 'minLength:5|maxLength:11|regexUsername|namePassswordValidator',
+        ? 'required|minLength:5|maxLength:25|regexUsername|namePassswordValidator'
+        : 'minLength:5|maxLength:25|regexUsername|namePassswordValidator',
     password:
       password == ''
         ? 'required|regexPass|minLength:8|maxLength:20'

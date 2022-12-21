@@ -2,7 +2,9 @@ const db = require('../config/database')
 const models = require('../models/recipes')
 const { v4: uuidv4 } = require('uuid')
 const path = require('path')
-const { clearLine } = require('readline')
+// const { clearLine } = require('readline')
+const { connectRedis } = require('../middleware/redis')
+const { cloudinary } = require('../middleware/upload')
 
 const getAllRecipes = async (req, res) => {
   try {
@@ -14,7 +16,18 @@ const getAllRecipes = async (req, res) => {
 
     if (titlez) {
       getUsersData = await models.getRecipesByNameRelation({ title: titlez })
+
       if (getUsersData.length > 0) {
+        connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
+        connectRedis.set('title_getAllRecipes', titlez, 'ex', 10)
+        connectRedis.set(
+          'data_getAllRecipes',
+          JSON.stringify(getUsersData),
+          'ex',
+          10
+        )
+        connectRedis.set('is_title_getAllRecipes', true, 'ex', 10)
+        connectRedis.set('total_find', getUsersData?.length, 'ex', 10)
         res.json({
           message: `Get Recipes With titles: ${titlez}`,
           total: getUsersData.length,
@@ -26,7 +39,15 @@ const getAllRecipes = async (req, res) => {
     }
     if (!titlez && !page && !limit && !sort) {
       getUsersData = totalDatas
-
+      connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
+      connectRedis.set('is_getAllRecipes', true, 'ex', 10)
+      connectRedis.set('total_find', getUsersData?.length, 'ex', 10)
+      connectRedis.set(
+        'data_getAllRecipes',
+        JSON.stringify(getUsersData),
+        'ex',
+        10
+      )
       res.json({
         message: 'success get all data users',
         total: getUsersData.length,
@@ -40,13 +61,47 @@ const getAllRecipes = async (req, res) => {
           page,
           limit,
         })
+        connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
+        connectRedis.set('is_paginated', true, 'ex', 10)
+        connectRedis.set('is_sorted', true, 'ex', 10)
+        connectRedis.set(
+          'data_paginated_getAllRecipes',
+          JSON.stringify(getAllData),
+          'ex',
+          10
+        )
+        connectRedis.set('total_paginated', totalDatas?.length, 'ex', 10)
+        connectRedis.set('dataPerPage', getAllData?.length, 'ex', 10)
+        connectRedis.set('page', page, 'ex', 10)
+        connectRedis.set('limit', limit, 'ex', 10)
       } else if (page && limit) {
         getAllData = await models.getAllRecipesRelationPagination({
           page,
           limit,
         })
+        connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
+        connectRedis.set('is_paginated', true, 'ex', 10)
+        connectRedis.set(
+          'data_paginated_getAllRecipes',
+          JSON.stringify(getAllData),
+          'ex',
+          10
+        )
+        connectRedis.set('total_paginated', totalDatas?.length, 'ex', 10)
+        connectRedis.set('dataPerPage', getAllData?.length, 'ex', 10)
+        connectRedis.set('page', page, 'ex', 10)
+        connectRedis.set('limit', limit, 'ex', 10)
       } else if (sort) {
         getAllData = await models.getAllRecipesRelationSort({ sort })
+        connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
+        connectRedis.set(
+          'data_sort',
+          JSON.stringify(getAllData),
+          'ex',
+          10
+        )
+        connectRedis.set('total_data_sort', getAllData?.length, 'ex', 10)
+        connectRedis.set('is_sorted', true, 'ex', 10)
         res.json({
           message: 'success get all data users (Descending)',
           total: totalDatas.length,
@@ -145,9 +200,14 @@ const addRecipes = async (req, res) => {
   try {
     const { accounts_id, title, ingredients } = req.body
     const checkID = await models.checkAccByID({ accounts_id })
+    const getTitle = await models.checkRecipesByTitle({ title })
 
     if (checkID.length == 0) {
       throw { code: 400, message: 'ID not identified' }
+    }
+
+    if (getTitle.length !== 0) {
+      throw { code: 403, message: 'Title already exist' }
     }
 
     const addRecipes = await models.addRecipes({
@@ -161,20 +221,8 @@ const addRecipes = async (req, res) => {
     })
   } catch (error) {
     res.status(error.code ?? 500).json({
-      message: error,
+      message: error.message ?? error,
     })
-
-    if (error.code == 23505) {
-      const { title } = req.body
-      const getTitle = await models.checkRecipesByTitle({ title })
-      if (getTitle.length !== 0) {
-        {
-          res.status(403).json({
-            message: 'Title taken!',
-          })
-        }
-      }
-    }
   }
 }
 
@@ -192,30 +240,36 @@ const addVideos = async (req, res) => {
 
     if (req.files) {
       let file = req.files.video
-      let fileName = `${uuidv4()}-${file.name}`
-      let rootDir = path.dirname(require.main.filename)
 
-      let uploadPath = `${rootDir}/images/recipes/videos/${fileName}`
-
-      file.mv(uploadPath, async function (err) {
-        if (err) {
-          throw { message: 'Upload failed' }
+      cloudinary.v2.uploader.upload(
+        file.tempFilePath,
+        { resource_type: 'video', public_id: uuidv4() },
+        async function (error, result) {
+          try {
+            if (error) {
+              throw 'Upload failed'
+            }
+            await models.addVideos({
+              recipes_id,
+              video: result.public_id,
+              accounts_id: checkAccID[0].accounts_id,
+              checkAccID,
+            })
+            res.json({
+              message: 'video uploaded',
+              data: req.body,
+            })
+          } catch (error) {
+            res.status(error.code ?? 500).json({
+              message: error,
+            })
+          }
         }
-      })
-      models.addVideos({
-        recipes_id,
-        video: `/static/recipes/videos/${fileName}`,
-        accounts_id: checkAccID[0].accounts_id,
-        checkAccID,
-      })
-      res.json({
-        message: 'video uploaded',
-        data: req.body,
-      })
+      )
     }
-  } catch (err) {
-    res.status(err.code ?? 500).json({
-      message: err,
+  } catch (error) {
+    res.status(error.code ?? 500).json({
+      message: error,
     })
   }
 }
@@ -232,26 +286,33 @@ const addPhotos = async (req, res) => {
     }
     if (req.files) {
       let file = req.files.photo
-      let fileName = `${uuidv4()}-${file.name}`
-      let rootDir = path.dirname(require.main.filename)
 
-      let uploadPath = `${rootDir}/images/recipes/photos/${fileName}`
+      cloudinary.v2.uploader.upload(
+        file.tempFilePath,
+        { public_id: uuidv4() },
+        async function (error, result) {
+          try {
+            if (error) {
+              throw 'Upload failed'
+            }
 
-      file.mv(uploadPath, async function (err) {
-        if (err) {
-          throw { message: 'Upload failed' }
+            await models.addPhotos({
+              recipes_id,
+              photo: result.public_id,
+              accounts_id: checkAccID[0].accounts_id,
+              checkAccID,
+            })
+            res.json({
+              message: 'photo uploaded',
+              data: req.body,
+            })
+          } catch (error) {
+            res.status(error?.code ?? 500).json({
+              message: error,
+            })
+          }
         }
-      })
-      await models.addPhotos({
-        recipes_id,
-        photo: `/static/recipes/photos/${fileName}`,
-        accounts_id: checkAccID[0].accounts_id,
-        checkAccID,
-      })
-      res.json({
-        message: 'photo uploaded',
-        data: req.body,
-      })
+      )
     }
   } catch (err) {
     res.status(err?.code ?? 500).json({
@@ -262,8 +323,7 @@ const addPhotos = async (req, res) => {
 
 const addComments = async (req, res) => {
   try {
-    const { id } = req.params
-    const { recipes_id, comment } = req.body
+    const { recipes_id, accounts_id, comment } = req.body
     const checkRecipesID = await models.checkRecipesIDbyRecipesID({
       recipes_id,
     })
@@ -273,7 +333,11 @@ const addComments = async (req, res) => {
       throw { code: 400, message: 'ID not identified' }
     }
 
-    const addcomment = await models.addComments({ recipes_id, comment, id })
+    const addcomment = await models.addComments({
+      recipes_id,
+      comment,
+      accounts_id,
+    })
     res.json({
       message: 'data collected',
       data: req.body,
@@ -321,7 +385,6 @@ const updateRecipes = async (req, res) => {
         (photo || video) == undefined &&
         comment !== undefined
       ) {
-  
         const checkCommID = await models.checkComment({ id })
 
         if (checkCommID.length !== 1) {
@@ -346,9 +409,6 @@ const updateRecipes = async (req, res) => {
             throw { code: 400, message: 'photos_ID not identified' }
           } else {
             let file = req.files.photo
-            let fileName = `${uuidv4()}-${file.name}`
-            let rootDir = path.dirname(require.main.filename)
-            let uploadPath = `${rootDir}/images/recipes/photos/${fileName}`
             let mimeType = file.mimetype.split('/')[1]
             let allowedFile = ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG']
             let MB = 2
@@ -363,17 +423,28 @@ const updateRecipes = async (req, res) => {
                 throw { code: 413, message }
               }
 
-              file.mv(uploadPath, async function (err) {
-                if (err) {
-                  throw { message: 'Upload failed' }
+              cloudinary.v2.uploader.destroy(
+                checkPhtID[0].photo,
+                function (error, result) {
+                  console.log(result, error)
                 }
-              })
-              await models.editPhotos({
-                photo: `/static/recipes/photos/${fileName}`,
-                checkPhtID,
-                id,
-              })
+              )
 
+              cloudinary.v2.uploader.upload(
+                file.tempFilePath,
+                { public_id: uuidv4() },
+                async function (error, result) {
+                  if (error) {
+                    // throw 'Upload failed'
+                    throw new Error(400)
+                  }
+                  await models.editPhotos({
+                    photo: result.public_id,
+                    checkPhtID,
+                    id,
+                  })
+                }
+              )
               res.json({
                 status: 'true',
                 message: 'photo updated',
@@ -399,12 +470,9 @@ const updateRecipes = async (req, res) => {
             throw { code: 400, message: 'videos_ID not identified' }
           } else {
             let file = req.files.video
-            let fileName = `${uuidv4()}-${file.name}`
-            let rootDir = path.dirname(require.main.filename)
-            let uploadPath = `${rootDir}/images/recipes/videos/${fileName}`
-            let mimeType = file.mimetype.split('/')[1]
+            let mimeType = file.name.split('.')[1]
             let allowedVid = ['mp4', 'mkv', 'MP4', 'MKV']
-            let MB = 500
+            let MB = 200
 
             if (allowedVid.find((item) => item == mimeType)) {
               if (file.size > MB * 1024 * 1024) {
@@ -416,17 +484,28 @@ const updateRecipes = async (req, res) => {
                 throw { code: 413, message }
               }
 
-              file.mv(uploadPath, async function (err) {
-                if (err) {
-                  throw { message: 'Upload failed' }
+              cloudinary.v2.uploader.destroy(
+                checkVidID[0].video,
+                { resource_type: 'video' },
+                function (error, result) {
+                  console.log(result, error)
                 }
-              })
-              const editvideos = await models.editVideos({
-                video: `/static/recipes/videos/${fileName}`,
-                checkVidID,
-                id,
-              })
+              )
 
+              cloudinary.v2.uploader.upload(
+                file.tempFilePath,
+                { resource_type: 'video', public_id: uuidv4() },
+                async function (error, result) {
+                  if (error) {
+                    throw 'Upload failed'
+                  }
+                  const editvideos = await models.editVideos({
+                    video: result.public_id,
+                    checkVidID,
+                    id,
+                  })
+                }
+              )
               res.json({
                 status: 'true',
                 message: 'video updated',
@@ -490,10 +569,15 @@ const deleteVideos = async (req, res) => {
   try {
     const { id } = req.params
     const validator = await models.getRecipesVidByVidID({ id })
-
-
-
+    console.log(validator)
     if (validator.length !== 0) {
+      cloudinary.v2.uploader.destroy(
+        validator[0].video,
+        { resource_type: 'video' },
+        function (error, result) {
+          console.log(result, error)
+        }
+      )
       await models.deleteVideos({ id })
     } else {
       res.status(400).json({
@@ -502,7 +586,7 @@ const deleteVideos = async (req, res) => {
     }
     res.json({
       status: 'true',
-      message: 'DATA DELETED!',
+      message: 'Video successfully deleted',
     })
   } catch (err) {
     res.status(500).json({
@@ -517,18 +601,22 @@ const deletePhotos = async (req, res) => {
     const { id } = req.params
     const validator = await models.getRecipesPhtByPhtID({ id })
 
-   
-
     if (validator.length !== 0) {
+      cloudinary.v2.uploader.destroy(
+        validator[0].photo,
+        function (error, result) {
+          console.log(result, error)
+        }
+      )
       await models.deletePhotos({ id })
     } else {
       res.status(400).json({
-        message: 'ID not identified',
+        message: 'photos_ID not identified',
       })
     }
     res.json({
       status: 'true',
-      message: 'DATA DELETED!',
+      message: 'Image successfully deleted',
     })
   } catch (err) {
     res.status(500).json({

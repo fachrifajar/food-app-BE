@@ -32,8 +32,9 @@ const validateToken = (req, res, next) => {
       jwt.verify(token, accToken, (err, decoded) => {
         // console.log(decoded)
         if (err) throw { code: 401, message: 'Token error, please try again!' }
+        // req.email = decoded.email
         next()
-        // if (Date.now() > decoded.exp) {
+        // if (Date.now() - 100000 > decoded.exp) {
         //   throw { code: 401, message: 'Token Expired' }
         // }
       })
