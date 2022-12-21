@@ -1,5 +1,17 @@
 const db = require('../config/database')
 
+const checkValidUsers = async (params) => {
+  const { checkLoggedEmail } = params
+
+  return await db`SELECT email FROM accounts WHERE email = ${checkLoggedEmail}`
+}
+
+const checkRole = async (params) => {
+  const { email } = params
+
+  return await db`SELECT role FROM accounts WHERE email = ${email}`
+}
+
 const getAllUsers = async () => {
   return await db`SELECT * FROM accounts ORDER BY created_at ASC`
 }
@@ -124,4 +136,6 @@ module.exports = {
   deleteUsers,
   getUsersByEmail,
   createUsers,
+  checkRole,
+  checkValidUsers,
 }

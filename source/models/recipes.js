@@ -111,9 +111,9 @@ const addPhotos = async (params) => {
 }
 
 const addComments = async (params) => {
-  const { recipes_id, comment, id } = params
+  const { recipes_id, comment, accounts_id } = params
 
-  return await db`INSERT INTO comments ("recipes_id","comment", "accounts_id") VALUES (${recipes_id}, ${comment}, ${id})`
+  return await db`INSERT INTO comments ("recipes_id","comment", "accounts_id") VALUES (${recipes_id}, ${comment}, ${accounts_id})`
 }
 
 const getRecipesByRecipesID = async (params) => {

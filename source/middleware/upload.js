@@ -1,3 +1,5 @@
+require('dotenv').config()
+const cloudinary = require('cloudinary')
 const path = require('path')
 const MB = 2
 const FILE_SIZE_LIMIT = MB * 1024 * 1024
@@ -166,10 +168,17 @@ const vidExtLimiter = (allowedExtArray) => {
   }
 }
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+})
+
 module.exports = {
   filesPayLoadExist,
   fileSizeLimiter,
   fileExtLimiter,
   vidSizeLimiter,
   vidExtLimiter,
+  cloudinary,
 }

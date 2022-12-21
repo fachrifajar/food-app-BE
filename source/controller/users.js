@@ -1,18 +1,31 @@
 const db = require('../config/database')
 const models = require('../models/users')
 const { v4: uuidv4 } = require('uuid')
-const path = require('path')
+const bcrypt = require('bcrypt')
+const saltRounds = 10
+const { connectRedis } = require('../middleware/redis')
+const { cloudinary } = require('../middleware/upload')
+const { signedCookie } = require('cookie-parser')
 
 const getReqAccountByID = async (req, res) => {
   try {
     const { id } = req.params
-    const { page, limit, sort } = req.query
+    const { page, limit, sort, checkLoggedEmail } = req.query
     const totalDatas = await models.getAllUsers()
+    const checkRole = await models.checkRole({ email: checkLoggedEmail })
     let getUsersData
     let getAllData
 
+    if (checkRole[0]?.role !== 'ADMIN') {
+      throw { code: 401, message: 'Not allowed' }
+    }
+
     if (id) {
       getUsersData = await models.getUsersByID({ id })
+      connectRedis.set('find_users', true, 'ex', 10)
+      connectRedis.set('url', req.originalUrl, 'ex', 10)
+      connectRedis.set('id_users', id, 'ex', 10)
+      connectRedis.set('getReqAccount', JSON.stringify(getUsersData), 'ex', 10)
       if (getUsersData.length > 0) {
         res.json({ message: `Get User With ID: ${id}`, data: getUsersData })
       } else {
@@ -21,6 +34,9 @@ const getReqAccountByID = async (req, res) => {
     }
     if (!id && !page && !limit && !sort) {
       getUsersData = totalDatas
+      connectRedis.set('url', req.originalUrl, 'ex', 10)
+      connectRedis.set('find_all_users', true, 'ex', 10)
+      connectRedis.set('getReqAccount', JSON.stringify(getUsersData), 'ex', 10)
       res.json({
         message: 'Success get all data users',
         total: getUsersData.length,
@@ -36,8 +52,17 @@ const getReqAccountByID = async (req, res) => {
         })
       } else if (page && limit) {
         getAllData = await models.getAllUsersPagination({ limit, page })
+        connectRedis.set('url', req.originalUrl, 'ex', 10)
+        connectRedis.set('page', page, 'ex', 10)
+        connectRedis.set('limit', limit, 'ex', 10)
+        connectRedis.set('dataPerPage', JSON.stringify(getAllData), 'ex', 10)
+        connectRedis.set('getReqAccPagi', JSON.stringify(totalDatas), 'ex', 10)
+        connectRedis.set('isPaginated', true, 'ex', 10)
       } else if (sort) {
         getAllData = await models.getAllUsersSort({ sort })
+        connectRedis.set('url', req.originalUrl, 'ex', 10)
+        connectRedis.set('isSorted', true, 'ex', 10)
+        connectRedis.set('sortedData', JSON.stringify(getAllData), 'ex', 10)
         res.json({
           message: 'Success get all data users',
           total: getAllData.length,
@@ -45,7 +70,14 @@ const getReqAccountByID = async (req, res) => {
         })
       }
     }
+
     if ((page && limit && sort) || (page && limit)) {
+      connectRedis.set('url', req.originalUrl, 'ex', 10)
+      connectRedis.set('page', page, 'ex', 10)
+      connectRedis.set('limit', limit, 'ex', 10)
+      connectRedis.set('dataPerPage', JSON.stringify(getAllData), 'ex', 10)
+      connectRedis.set('getReqAccPagi', JSON.stringify(totalDatas), 'ex', 10)
+      connectRedis.set('isPaginated', true, 'ex', 10)
       res.json({
         message: 'success get data',
         total: totalDatas.length,
@@ -54,9 +86,9 @@ const getReqAccountByID = async (req, res) => {
         data: getAllData,
       })
     }
-  } catch (err) {
-    res.status(err?.code).json({
-      serverMessage: err,
+  } catch (error) {
+    res.status(error?.code ?? 500).json({
+      serverMessage: error,
     })
   }
 }
@@ -67,6 +99,14 @@ const getReqUsersByName = async (req, res) => {
     const { username } = req.params
     const getUsersData = await models.getUsersByName({ username, limit, page })
     if (getUsersData.length !== 0) {
+      connectRedis.set('getReqUsersByName_url', req.originalUrl, 'ex', 10)
+      connectRedis.set(
+        'getReqUsersByName_getUsersData',
+        JSON.stringify(getUsersData),
+        'ex',
+        10
+      )
+      connectRedis.set('getReqUsersByName_username', username, 'ex', 10)
       res.json({
         message: `Get ${getUsersData.length} User With initial username: ${username}`,
         data: getUsersData,
@@ -86,7 +126,16 @@ const getReqUsersByEmail = async (req, res) => {
     const { page, limit } = req.query
     const { email } = req.params
     const getUsersData = await models.getUsersByEmail({ email, page, limit })
+
     if (getUsersData.length !== 0) {
+      connectRedis.set('getReqUsersByEmail_url', req.originalUrl, 'ex', 10)
+      connectRedis.set(
+        'getReqUsersByEmail_getUsersData',
+        JSON.stringify(getUsersData),
+        'ex',
+        10
+      )
+      connectRedis.set('getReqUsersByEmail_email', email, 'ex', 10)
       res.json({
         message: `Get ${getUsersData.length} email With initial: ${email}`,
         data: getUsersData,
@@ -105,6 +154,8 @@ const createUsers = async (req, res) => {
   try {
     const { email, phone_number, username, password, profile_picture } =
       req.body
+    const salt = await bcrypt.genSalt(saltRounds)
+    const hashedPassword = await bcrypt.hash(req.body.password, salt)
 
     const getEmail = await models.getEmail({ email })
     const getUsername = await models.getUsername({ username })
@@ -114,49 +165,72 @@ const createUsers = async (req, res) => {
       getUsername.length !== 0 &&
       getPhoneNumber.length !== 0
     ) {
-      throw { code: 409, message: 'email, username & phoneNumber taken!' }
+      throw {
+        code: 409,
+        message:
+          'User with the provided email, username & phoneNumber already exists',
+      }
     }
     if (
       getEmail.length == 0 &&
       getUsername.length !== 0 &&
       getPhoneNumber.length !== 0
     ) {
-      throw { code: 409, message: 'phone number & username taken!' }
+      throw {
+        code: 409,
+        message:
+          'User with the provided phone number & username already exists',
+      }
     }
     if (
       getEmail.length !== 0 &&
       getUsername.length == 0 &&
       getPhoneNumber.length !== 0
     ) {
-      throw { code: 409, message: 'email & phone number taken!' }
+      throw {
+        code: 409,
+        message: 'User with the provided email & phone number already exists',
+      }
     }
     if (
       getEmail.length !== 0 &&
       getUsername.length !== 0 &&
       getPhoneNumber.length == 0
     ) {
-      throw { code: 409, message: 'email & username taken!' }
+      throw {
+        code: 409,
+        message: 'User with the provided email & username already exists',
+      }
     }
     if (
       getEmail.length !== 0 &&
       getUsername.length == 0 &&
       getPhoneNumber.length == 0
     ) {
-      throw { code: 409, message: 'email taken!' }
+      throw {
+        code: 409,
+        message: 'User with the provided email already exists',
+      }
     }
     if (
       getEmail.length == 0 &&
       getUsername.length !== 0 &&
       getPhoneNumber.length == 0
     ) {
-      throw { code: 409, message: 'username taken!' }
+      throw {
+        code: 409,
+        message: 'User with the provided username already exists',
+      }
     }
     if (
       getEmail.length == 0 &&
       getUsername.length == 0 &&
       getPhoneNumber.length !== 0
     ) {
-      throw { code: 409, message: 'phone number taken!' }
+      throw {
+        code: 409,
+        message: 'User with the provided phone number already exists',
+      }
     }
 
     if (!req.files) {
@@ -164,46 +238,70 @@ const createUsers = async (req, res) => {
         email,
         phone_number,
         username,
-        password,
+        password: hashedPassword,
         profile_picture,
         defaultPicture:
-          'https://www.kindpng.com/picc/m/21-214439_free-high-quality-person-icon-default-profile-picture.png',
+          'https://res.cloudinary.com/daouvimjz/image/upload/v1671522875/Instagram_default_profile_kynrq6.jpg',
       })
 
-      res.json({
+      res.status(201).json({
         status: 'true',
-        message: 'data collected',
-        data: req.body,
+        message: 'Success Create New Account',
+        data: req.body.email,
       })
     } else {
       // The name of the input field (i.e. "file") is used to retrieve the uploaded file
       let file = req.files.profile_picture
-      let fileName = `${uuidv4()}-${file.name}`
-      let rootDir = path.dirname(require.main.filename)
+      // let fileName = `${uuidv4()}-${file.name}`
+      // let rootDir = path.dirname(require.main.filename)
+      // console.log(file)
+      // let uploadPath = `${rootDir}/images/users/${fileName}`
 
-      let uploadPath = `${rootDir}/images/users/${fileName}`
+      cloudinary.v2.uploader.upload(
+        file.tempFilePath,
+        { public_id: uuidv4() },
+        function (error, result) {
+          if (error) {
+            throw 'Upload failed'
+          }
 
-      // Use the mv() method to place the file somewhere on your server
-      file.mv(uploadPath, async function (err) {
-        if (err) {
-          throw { message: 'Upload failed' }
+          // Use the mv() method to place the file somewhere on your server
+          // file.mv(uploadPath, async function (err) {
+          //   if (err) {
+          //     throw { message: 'Upload failed' }
+          //   }
+
+          bcrypt.hash(password, saltRounds, async function (err, hash) {
+            try {
+              if (err) {
+                throw 'Failed Authenticate, please try again'
+              }
+
+              const addData = await models.createUsers({
+                email,
+                phone_number,
+                username,
+                password: hash,
+                // profile_picture: `/static/users/${fileName}`,
+                profile_picture: result.public_id,
+                defaultPicture:
+                  'https://res.cloudinary.com/daouvimjz/image/upload/v1671522875/Instagram_default_profile_kynrq6.jpg',
+              })
+
+              res.status(201).json({
+                status: 'true',
+                message: 'Success Create New Account',
+                data: req.body.email,
+              })
+            } catch (error) {
+              res.status(error?.code ?? 500).json({
+                message: error,
+              })
+            }
+          })
+          // })
         }
-        const addData = await models.createUsers({
-          email,
-          phone_number,
-          username,
-          password,
-          profile_picture: `/static/users/${fileName}`,
-          defaultPicture:
-            'https://www.kindpng.com/picc/m/21-214439_free-high-quality-person-icon-default-profile-picture.png',
-        })
-
-        res.json({
-          status: 'true',
-          message: 'data collected',
-          data: req.body,
-        })
-      })
+      )
     }
   } catch (error) {
     res.status(error?.code ?? 500).json({
@@ -215,23 +313,55 @@ const createUsers = async (req, res) => {
 const updateUsersPartial = async (req, res) => {
   try {
     const { id } = req.params
-    const { email, phone_number, username, password, profile_picture } =
-      req.body
+    const {
+      email,
+      phone_number,
+      username,
+      password,
+      profile_picture,
+      checkLoggedEmail,
+    } = req.body
+
     const getAllData = await models.getUsersByID({ id })
+    const checkValidUsers = await models.checkValidUsers({ checkLoggedEmail })
 
     if (!req.files) {
       if (getAllData.length == 0) {
         throw { code: 400, message: 'ID not identified' }
       } else {
-        await models.updateUsersPartial({
-          email,
-          defaultValue: getAllData[0],
-          phone_number,
-          username,
-          password,
-          profile_picture,
-          id,
-        })
+        if (password == undefined) {
+          await models.updateUsersPartial({
+            email,
+            defaultValue: getAllData[0],
+            phone_number,
+            username,
+            password,
+            profile_picture,
+            id,
+          })
+        } else {
+          bcrypt.hash(password, saltRounds, async function (err, hash) {
+            try {
+              if (err) {
+                throw 'Failed Authenticate, please try again'
+                // throw new Error(400)
+              }
+              await models.updateUsersPartial({
+                email,
+                defaultValue: getAllData[0],
+                phone_number,
+                username,
+                password: hash,
+                profile_picture,
+                id,
+              })
+            } catch (error) {
+              res.status(error?.code ?? 500).json({
+                message: error.message ?? error,
+              })
+            }
+          })
+        }
 
         res.json({
           status: 'true',
@@ -243,29 +373,80 @@ const updateUsersPartial = async (req, res) => {
         })
       }
     } else {
-      let file = req.files.profile_picture
-      let fileName = `${uuidv4()}-${file.name}`
-      let rootDir = path.dirname(require.main.filename)
-
-      let uploadPath = `${rootDir}/images/users/${fileName}`
-
       if (getAllData.length == 0) {
         throw { code: 400, message: 'ID not identified' }
       } else {
-        file.mv(uploadPath, async function (err) {
-          if (err) {
-            throw { message: 'Upload failed' }
-          }
-        })
-        await models.updateUsersPartial({
-          email,
-          defaultValue: getAllData[0],
-          phone_number,
-          username,
-          password,
-          profile_picture: `/static/users/${fileName}`,
-          id,
-        })
+        if (password == undefined) {
+          let file = req.files.profile_picture
+
+          cloudinary.v2.uploader.destroy(
+            getAllData[0].profile_picture,
+            function (error, result) {
+              console.log(result, error)
+            }
+          )
+
+          cloudinary.v2.uploader.upload(
+            file.tempFilePath,
+            { public_id: uuidv4() },
+            async function (error, result) {
+              if (error) {
+                // throw 'Upload failed'
+                throw new Error(400)
+              }
+
+              await models.updateUsersPartial({
+                email,
+                defaultValue: getAllData[0],
+                phone_number,
+                username,
+                password,
+                profile_picture: result.public_id,
+                id,
+              })
+            }
+          )
+        } else {
+          let file = req.files.profile_picture
+
+          cloudinary.v2.uploader.destroy(
+            getAllData[0].profile_picture,
+            function (error, result) {
+              console.log(result, error)
+            }
+          )
+
+          cloudinary.v2.uploader.upload(
+            file.tempFilePath,
+            { public_id: uuidv4() },
+            async function (error, result) {
+              if (error) {
+                throw 'Upload failed'
+              }
+              bcrypt.hash(password, saltRounds, async function (err, hash) {
+                try {
+                  if (err) {
+                    throw 'Failed Authenticate, please try again'
+                  }
+
+                  await models.updateUsersPartial({
+                    email,
+                    defaultValue: getAllData[0],
+                    phone_number,
+                    username,
+                    password: hash,
+                    profile_picture: result.public_id,
+                    id,
+                  })
+                } catch (error) {
+                  res.status(500).json({
+                    message: error.message,
+                  })
+                }
+              })
+            }
+          )
+        }
 
         res.json({
           status: 'true',
@@ -274,6 +455,7 @@ const updateUsersPartial = async (req, res) => {
             id,
             ...req.body,
           },
+          profile_picture: req.files.profile_picture.name,
         })
       }
     }
@@ -284,7 +466,7 @@ const updateUsersPartial = async (req, res) => {
         'duplicate key value violates unique constraint "users_email_key"'
       ) {
         res.status(422).json({
-          message: 'email taken',
+          message: 'User with the provided email already exists',
         })
       }
       if (
@@ -292,7 +474,7 @@ const updateUsersPartial = async (req, res) => {
         'duplicate key value violates unique constraint "users_username_key"'
       ) {
         res.status(422).json({
-          message: 'username taken',
+          message: 'User with the provided username already exists',
         })
       }
       if (
@@ -300,7 +482,7 @@ const updateUsersPartial = async (req, res) => {
         'duplicate key value violates unique constraint "users_phone_number_key"'
       ) {
         res.status(422).json({
-          message: 'phone number taken',
+          message: 'User with the provided phone number already exists',
         })
       } else {
         res.status(error?.code ?? 500).json({
@@ -434,7 +616,7 @@ const deleteUsers = async (req, res) => {
   try {
     const { id } = req.params
     const getAllData = await models.getUsersByID({ id })
-    console.log(req.body)
+
     if (getAllData.length !== 0) {
       await models.deleteUsers({ id })
       res.json({
@@ -444,8 +626,6 @@ const deleteUsers = async (req, res) => {
     } else {
       throw { code: 422, message: 'id not identified' }
     }
-
-    console.log(req.body)
   } catch (err) {
     res.status(err.code ?? 500).json({
       message: err,
@@ -462,96 +642,3 @@ module.exports = {
   updateUsers,
   deleteUsers,
 }
-
-/**
- * // const { email, phone_number, username } = req.body
-
-    // if (error.code == 23505) {
-    //   const getEmail = await models.getEmail({ email })
-    //   const getUsername = await models.getUsername({ username })
-    //   const getPhoneNumber = await models.getPhoneNumber({ phone_number })
-    //   if (
-    //     getEmail.length !== 0 &&
-    //     getUsername.length !== 0 &&
-    //     getPhoneNumber.length !== 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'email, username & phoneNumber taken!',
-    //     })
-    //   }
-    //   if (
-    //     getEmail.length == 0 &&
-    //     getUsername.length !== 0 &&
-    //     getPhoneNumber.length !== 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'phone number & username taken!',
-    //     })
-    //   }
-    //   if (
-    //     getEmail.length !== 0 &&
-    //     getUsername.length == 0 &&
-    //     getPhoneNumber.length !== 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'email & phone number taken!',
-    //     })
-    //   }
-    //   if (
-    //     getEmail.length !== 0 &&
-    //     getUsername.length !== 0 &&
-    //     getPhoneNumber.length == 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'email & username taken!',
-    //     })
-    //   }
-    //   if (
-    //     getEmail.length !== 0 &&
-    //     getUsername.length == 0 &&
-    //     getPhoneNumber.length == 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'email taken!',
-    //     })
-    //   }
-    //   if (
-    //     getEmail.length == 0 &&
-    //     getUsername.length !== 0 &&
-    //     getPhoneNumber.length == 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'username taken!',
-    //     })
-    //   }
-    //   if (
-    //     getEmail.length == 0 &&
-    //     getUsername.length == 0 &&
-    //     getPhoneNumber.length !== 0
-    //   ) {
-    //     res.status(409).json({
-    //       message: 'phone number taken!',
-    //     })
-    //   }
-    // }
- */
-
-/**
-     *  // await models.updateUsersPartial({
-      //   email,
-      //   defaultValue: getAllData[0],
-      //   phone_number,
-      //   username,
-      //   password,
-      //   profile_picture,
-      //   id,
-      // })
-      // res.json({
-      //   status: 'true',
-      //   message: 'data updated',
-      //   data: {
-      //     id,
-      //     ...req.body,
-      //   },
-      // })
-     */
