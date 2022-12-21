@@ -26,25 +26,25 @@ router.post(
 router.get(
   '/:id?',
   authMiddleware.validateToken,
-  redisMiddleware.useRedis,
+  redisMiddleware.getReqAccountByID_Redis,
   usersController.getReqAccountByID
 )
 
 router.get(
   '/name/:username',
   authMiddleware.validateToken,
-  redisMiddleware.useRedis,
+  redisMiddleware.getReqUsersByName_Redis,
   usersController.getReqUsersByName
 )
 
 router.get(
   '/email/:email',
   authMiddleware.validateToken,
-  redisMiddleware.useRedis,
+  redisMiddleware.getReqUsersByEmail_Redis,
   usersController.getReqUsersByEmail
 )
 
-// UPDATE //tambahkan bcrypt pada patch
+// UPDATE
 router.patch(
   '/edit/:id',
   authMiddleware.validateToken,
@@ -71,7 +71,5 @@ router.delete(
   middleware.deleteUsersValidator,
   usersController.deleteUsers
 ) // cek lagi ada yg kurang
-
-// LOGIN //!@ belum
 
 module.exports = router

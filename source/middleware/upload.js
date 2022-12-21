@@ -1,3 +1,4 @@
+require('dotenv').config()
 const cloudinary = require('cloudinary')
 const path = require('path')
 const MB = 2
@@ -168,9 +169,9 @@ const vidExtLimiter = (allowedExtArray) => {
 }
 
 cloudinary.config({
-  cloud_name: 'daouvimjz',
-  api_key: '549719657447986',
-  api_secret: 'RPLtU02NLI2HxgwH2j29P4mHw7Y',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
 module.exports = {

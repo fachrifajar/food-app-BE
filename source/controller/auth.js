@@ -23,7 +23,7 @@ const login = async (req, res) => {
             iat: new Date().getTime(),
           },
           accToken,
-          { expiresIn: 10 }
+          { expiresIn: '20s' }
         )
         const refreshToken = jwt.sign(
           {
@@ -75,7 +75,7 @@ const refreshToken = async (req, res) => {
       const name = user[0]?.username
       const email = user[0]?.email
       const accessToken = jwt.sign({ userId, name, email }, accToken, {
-        expiresIn: '15000',
+        expiresIn: '12h',
       })
       res.json({ accessToken })
     })
