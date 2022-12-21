@@ -1,15 +1,29 @@
-#### food-app-BE
+## Table of contents
+* [Project info](#general-info)
+* [Technologies](#technologies)
+* [Setup](#setup)
 
-Creating Basic CRUD REST-API with Express-JS, Node-JS and PostgreSQL as RDMS
+## Project info
+Built REST-API from scratch, using MVC method, JWT, Hashing Password, Cloudinary, etc.
+	
+## Technologies
+Project is created with:
+* Express.JS
+* PostgreSQL
+	
+## Setup
+To run this project, install it locally using npm:
 
-whats about this mini project ?
+```
+$ npm i express
+$ npm i cors
+$ npm i dotenv
+$ npm i body-parser
+$ npm i helmet
+$ npm i node-input-validator
+$ npm i nodemon
+$ npm i postgres
+$ npm i uuid
+$ npm i xss-clean
 
-  -Using MVC Method
-  
-  -Using security, such as XSS Clean, helmet, node-input-validator, cors
-
-notes:
-
-*second commit -> Implementing MVC
-
-*third commit -> photo & video uploader
+```
