@@ -13,8 +13,13 @@ Project is created with:
 	
 ## Setup
 To run this project : 
+* git clone 
+```
+git clone https://github.com/fachrifajar/food-app-BE.git
+```
 * Install NPM
 * Install Express
+* Install Nodemon
 * Set up .env 
 
 ```
