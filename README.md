@@ -12,7 +12,10 @@ Project is created with:
 * PostgreSQL
 	
 ## Setup
-To run this project, install it locally using npm:
+To run this project : 
+* Install NPM
+* Install Express
+* Set up .env 
 
 ```
 $ npm i express
