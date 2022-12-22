@@ -31,7 +31,9 @@ const validateToken = (req, res, next) => {
     if (authHeaders) {
       jwt.verify(token, accToken, (err, decoded) => {
         // console.log(decoded)
-        if (err) throw { code: 401, message: 'Token error, please try again!' }
+        if (err) {
+          throw { code: 401, message: 'Token error, please try again!' }
+        }
         // req.email = decoded.email
         next()
         // if (Date.now() - 100000 > decoded.exp) {
@@ -48,4 +50,29 @@ const validateToken = (req, res, next) => {
   }
 }
 
-module.exports = { loginValidator, validateToken }
+const validateRole = (req, res, next) => {
+  try {
+    const authHeaders = req.headers['authorization']
+    const token = authHeaders && authHeaders.split(' ')[1]
+    // const { authorization } = req.headers
+
+    if (authHeaders) {
+      jwt.verify(token, accToken, (err, decoded) => {
+        if (err) throw { code: 401 }
+        else {
+          // return decoded.id
+          req.userId = decoded.id
+          next()
+        }
+      })
+    } else {
+      throw { code: 401, message: 'No Token Provide' }
+    }
+  } catch (error) {
+    res.status(error?.code ?? 500).json({
+      message: error?.message ?? error,
+    })
+  }
+}
+
+module.exports = { loginValidator, validateToken, validateRole }

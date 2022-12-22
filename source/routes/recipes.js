@@ -10,6 +10,7 @@ const authMiddleware = require('../middleware/auth')
 router.post(
   '/add',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.createRecipesValidator,
   recipesController.addRecipes
 )

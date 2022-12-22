@@ -10,15 +10,12 @@ const { signedCookie } = require('cookie-parser')
 const getReqAccountByID = async (req, res) => {
   try {
     const { id } = req.params
-    const { page, limit, sort, checkLoggedEmail } = req.query
+    const { page, limit, sort } = req.query
+
     const totalDatas = await models.getAllUsers()
-    const checkRole = await models.checkRole({ email: checkLoggedEmail })
+
     let getUsersData
     let getAllData
-
-    if (checkRole[0]?.role !== 'ADMIN') {
-      throw { code: 401, message: 'Not allowed' }
-    }
 
     if (id) {
       getUsersData = await models.getUsersByID({ id })
@@ -313,151 +310,151 @@ const createUsers = async (req, res) => {
 const updateUsersPartial = async (req, res) => {
   try {
     const { id } = req.params
-    const {
-      email,
-      phone_number,
-      username,
-      password,
-      profile_picture,
-      checkLoggedEmail,
-    } = req.body
+    const { email, phone_number, username, password, profile_picture } =
+      req.body
 
-    const getAllData = await models.getUsersByID({ id })
-    const checkValidUsers = await models.checkValidUsers({ checkLoggedEmail })
+    const checkId = id
+    const roleValidator = req.userId
 
-    if (!req.files) {
-      if (getAllData.length == 0) {
-        throw { code: 400, message: 'ID not identified' }
-      } else {
-        if (password == undefined) {
-          await models.updateUsersPartial({
-            email,
-            defaultValue: getAllData[0],
-            phone_number,
-            username,
-            password,
-            profile_picture,
-            id,
-          })
+    if (checkId == roleValidator) {
+      const getAllData = await models.getUsersByID({ id })
+
+      if (!req.files) {
+        if (getAllData.length == 0) {
+          throw { code: 400, message: 'ID not identified' }
         } else {
-          bcrypt.hash(password, saltRounds, async function (err, hash) {
-            try {
-              if (err) {
-                throw 'Failed Authenticate, please try again'
-                // throw new Error(400)
+          if (password == undefined) {
+            await models.updateUsersPartial({
+              email,
+              defaultValue: getAllData[0],
+              phone_number,
+              username,
+              password,
+              profile_picture,
+              id,
+            })
+          } else {
+            bcrypt.hash(password, saltRounds, async function (err, hash) {
+              try {
+                if (err) {
+                  throw 'Failed Authenticate, please try again'
+                  // throw new Error(400)
+                }
+                await models.updateUsersPartial({
+                  email,
+                  defaultValue: getAllData[0],
+                  phone_number,
+                  username,
+                  password: hash,
+                  profile_picture,
+                  id,
+                })
+              } catch (error) {
+                res.status(error?.code ?? 500).json({
+                  message: error.message ?? error,
+                })
               }
-              await models.updateUsersPartial({
-                email,
-                defaultValue: getAllData[0],
-                phone_number,
-                username,
-                password: hash,
-                profile_picture,
-                id,
-              })
-            } catch (error) {
-              res.status(error?.code ?? 500).json({
-                message: error.message ?? error,
-              })
-            }
+            })
+          }
+
+          res.json({
+            status: 'true',
+            message: 'data updated',
+            data: {
+              id,
+              ...req.body,
+            },
           })
         }
+      } else {
+        if (getAllData.length == 0) {
+          throw { code: 400, message: 'ID not identified' }
+        } else {
+          if (password == undefined) {
+            let file = req.files.profile_picture
 
-        res.json({
-          status: 'true',
-          message: 'data updated',
-          data: {
-            id,
-            ...req.body,
-          },
-        })
+            cloudinary.v2.uploader.destroy(
+              getAllData[0].profile_picture,
+              function (error, result) {
+                console.log(result, error)
+              }
+            )
+
+            cloudinary.v2.uploader.upload(
+              file.tempFilePath,
+              { public_id: uuidv4() },
+              async function (error, result) {
+                if (error) {
+                  // throw 'Upload failed'
+                  throw new Error(400)
+                }
+
+                await models.updateUsersPartial({
+                  email,
+                  defaultValue: getAllData[0],
+                  phone_number,
+                  username,
+                  password,
+                  profile_picture: result.public_id,
+                  id,
+                })
+              }
+            )
+          } else {
+            let file = req.files.profile_picture
+
+            cloudinary.v2.uploader.destroy(
+              getAllData[0].profile_picture,
+              function (error, result) {
+                console.log(result, error)
+              }
+            )
+
+            cloudinary.v2.uploader.upload(
+              file.tempFilePath,
+              { public_id: uuidv4() },
+              async function (error, result) {
+                if (error) {
+                  throw 'Upload failed'
+                }
+                bcrypt.hash(password, saltRounds, async function (err, hash) {
+                  try {
+                    if (err) {
+                      throw 'Failed Authenticate, please try again'
+                    }
+
+                    await models.updateUsersPartial({
+                      email,
+                      defaultValue: getAllData[0],
+                      phone_number,
+                      username,
+                      password: hash,
+                      profile_picture: result.public_id,
+                      id,
+                    })
+                  } catch (error) {
+                    res.status(500).json({
+                      message: error.message,
+                    })
+                  }
+                })
+              }
+            )
+          }
+
+          res.json({
+            status: 'true',
+            message: 'data updated',
+            data: {
+              id,
+              ...req.body,
+            },
+            profile_picture: req.files.profile_picture.name,
+          })
+        }
       }
     } else {
-      if (getAllData.length == 0) {
-        throw { code: 400, message: 'ID not identified' }
-      } else {
-        if (password == undefined) {
-          let file = req.files.profile_picture
-
-          cloudinary.v2.uploader.destroy(
-            getAllData[0].profile_picture,
-            function (error, result) {
-              console.log(result, error)
-            }
-          )
-
-          cloudinary.v2.uploader.upload(
-            file.tempFilePath,
-            { public_id: uuidv4() },
-            async function (error, result) {
-              if (error) {
-                // throw 'Upload failed'
-                throw new Error(400)
-              }
-
-              await models.updateUsersPartial({
-                email,
-                defaultValue: getAllData[0],
-                phone_number,
-                username,
-                password,
-                profile_picture: result.public_id,
-                id,
-              })
-            }
-          )
-        } else {
-          let file = req.files.profile_picture
-
-          cloudinary.v2.uploader.destroy(
-            getAllData[0].profile_picture,
-            function (error, result) {
-              console.log(result, error)
-            }
-          )
-
-          cloudinary.v2.uploader.upload(
-            file.tempFilePath,
-            { public_id: uuidv4() },
-            async function (error, result) {
-              if (error) {
-                throw 'Upload failed'
-              }
-              bcrypt.hash(password, saltRounds, async function (err, hash) {
-                try {
-                  if (err) {
-                    throw 'Failed Authenticate, please try again'
-                  }
-
-                  await models.updateUsersPartial({
-                    email,
-                    defaultValue: getAllData[0],
-                    phone_number,
-                    username,
-                    password: hash,
-                    profile_picture: result.public_id,
-                    id,
-                  })
-                } catch (error) {
-                  res.status(500).json({
-                    message: error.message,
-                  })
-                }
-              })
-            }
-          )
-        }
-
-        res.json({
-          status: 'true',
-          message: 'data updated',
-          data: {
-            id,
-            ...req.body,
-          },
-          profile_picture: req.files.profile_picture.name,
-        })
-      }
+      throw { code: 401 }
     }
   } catch (error) {
     if (error.code !== 500) {
@@ -617,18 +614,14 @@ const deleteUsers = async (req, res) => {
     const { id } = req.params
     const getAllData = await models.getUsersByID({ id })
 
-    if (getAllData.length !== 0) {
-      await models.deleteUsers({ id })
-      res.json({
-        status: 'true',
-        message: 'DATA DELETED!',
-      })
-    } else {
-      throw { code: 422, message: 'id not identified' }
-    }
-  } catch (err) {
-    res.status(err.code ?? 500).json({
-      message: err,
+    await models.deleteUsers({ id })
+    res.json({
+      status: 'true',
+      message: 'DATA DELETED!',
+    })
+  } catch (error) {
+    res.status(500).json({
+      message: error,
     })
   }
 }

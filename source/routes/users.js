@@ -48,6 +48,7 @@ router.get(
 router.patch(
   '/edit/:id',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   uploadMiddleware.fileExtLimiter([
     '.png',
     '.jpg',
@@ -64,12 +65,12 @@ router.patch(
 router.put('/edit/all/:id', usersController.updateUsers)
 
 // DELETE
-
 router.delete(
   '/delete/:id',
   authMiddleware.validateToken,
-  middleware.deleteUsersValidator,
+  authMiddleware.validateRole,
+  // middleware.deleteUsersValidator,
   usersController.deleteUsers
-) // cek lagi ada yg kurang
+)
 
 module.exports = router

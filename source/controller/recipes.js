@@ -94,12 +94,7 @@ const getAllRecipes = async (req, res) => {
       } else if (sort) {
         getAllData = await models.getAllRecipesRelationSort({ sort })
         connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
-        connectRedis.set(
-          'data_sort',
-          JSON.stringify(getAllData),
-          'ex',
-          10
-        )
+        connectRedis.set('data_sort', JSON.stringify(getAllData), 'ex', 10)
         connectRedis.set('total_data_sort', getAllData?.length, 'ex', 10)
         connectRedis.set('is_sorted', true, 'ex', 10)
         res.json({
