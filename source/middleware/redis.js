@@ -162,50 +162,84 @@ const getAllRecipes_Redis = async (req, res, next) => {
     const data_sort = await connectRedis.get('data_sort')
     const total_data_sort = await connectRedis.get('total_data_sort')
 
+    let hasSent = false
+
     if (matchedUrl) {
       if (is_title_getAllRecipes) {
-        res.json({
-          REDIS: true,
-          message: `Get Recipes With titles: ${title}`,
-          total: total_find,
-          data_find: JSON.parse(data_find),
-        })
+        if (!hasSent) {
+          res.json({
+            REDIS: true,
+            message: `Get Recipes With titles: ${title}`,
+            total: total_find,
+            data_find: JSON.parse(data_find),
+          })
+          hasSent = true
+        }
       }
       if (is_getAllRecipes) {
-        res.json({
-          REDIS: true,
-          message: 'success get all data users',
-          total: total_find,
-          data: JSON.parse(data_find),
-        })
+        if (!hasSent) {
+          res.json({
+            REDIS: true,
+            message: 'success get all data users',
+            total: total_find,
+            data: JSON.parse(data_find),
+          })
+          hasSent = true
+        }
       }
+
+      // if (is_title_getAllRecipes) {
+      //   res.json({
+      //     REDIS: true,
+      //     message: `Get Recipes With titles: ${title}`,
+      //     total: total_find,
+      //     data_find: JSON.parse(data_find),
+      //   })
+      // }
+      // if (is_getAllRecipes) {
+      //   res.json({
+      //     REDIS: true,
+      //     message: 'success get all data users',
+      //     total: total_find,
+      //     data: JSON.parse(data_find),
+      //   })
+      // }
       if (is_paginated && is_sorted) {
-        res.json({
-          REDIS: true,
-          message: 'success get all data users',
-          total: total_paginated,
-          dataPerPage: dataPerPage,
-          page: `${page} from ${Math.ceil(total_paginated / limit)}`,
-          data: JSON.parse(data_paginated_getAllRecipes),
-        })
+        if (!hasSent) {
+          res.json({
+            REDIS: true,
+            message: 'success get all data users',
+            total: total_paginated,
+            dataPerPage: dataPerPage,
+            page: `${page} from ${Math.ceil(total_paginated / limit)}`,
+            data: JSON.parse(data_paginated_getAllRecipes),
+          })
+          hasSent = true
+        }
       }
       if (is_paginated) {
-        res.json({
-          REDIS: true,
-          message: 'success get all data users',
-          total: total_paginated,
-          dataPerPage: dataPerPage,
-          page: `${page} from ${Math.ceil(total_paginated / limit)}`,
-          data: JSON.parse(data_paginated_getAllRecipes),
-        })
+        if (!hasSent) {
+          res.json({
+            REDIS: true,
+            message: 'success get all data users',
+            total: total_paginated,
+            dataPerPage: dataPerPage,
+            page: `${page} from ${Math.ceil(total_paginated / limit)}`,
+            data: JSON.parse(data_paginated_getAllRecipes),
+          })
+        }
+        hasSent = true
       }
       if (is_sorted && !is_paginated) {
-        res.json({
-          REDIS: true,
-          message: 'success get all data users (Descending)',
-          total: total_data_sort,
-          data: JSON.parse(data_sort),
-        })
+        if (!hasSent) {
+          res.json({
+            REDIS: true,
+            message: 'success get all data users (Descending)',
+            total: total_data_sort,
+            data: JSON.parse(data_sort),
+          })
+        }
+        hasSent = true
       }
     } else {
       next()

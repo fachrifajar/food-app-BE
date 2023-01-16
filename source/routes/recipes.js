@@ -69,16 +69,16 @@ router.post(
 // READ
 router.get(
   '/search/:titlez?',
-  authMiddleware.validateToken,
+  // authMiddleware.validateToken,
   redisMiddleware.getAllRecipes_Redis,
   recipesController.getAllRecipes
-) // sort by created_at / recipes_id
+) // ?sort by created_at / recipes_id
 
 router.get(
   '/search-2/:titlez?',
-  authMiddleware.validateToken,
+  // authMiddleware.validateToken,
   recipesController.getAllRecipes2
-) //sort by nama
+) //? sort by nama
 
 // UPDATE
 router.patch(

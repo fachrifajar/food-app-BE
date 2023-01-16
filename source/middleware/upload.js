@@ -1,7 +1,7 @@
 require('dotenv').config()
 const cloudinary = require('cloudinary')
 const path = require('path')
-const MB = 2
+const MB = 3
 const FILE_SIZE_LIMIT = MB * 1024 * 1024
 const MBVID = 500
 const VID_SIZE_LIMIT = MBVID * 1024 * 1024
