@@ -9,7 +9,7 @@ const createUsersValidator = (req, res, next) => {
   })
 
   extend('regexUsername', () => {
-    if (/^[a-zA-Z0-9]+$/g.test(req.body.username)) {
+    if (/^[a-zA-Z0-9\s+]+$/g.test(req.body.username)) {
       return true
     } else {
       return false
@@ -66,7 +66,7 @@ const updateUsersPartialValidator = (req, res, next) => {
   })
 
   extend('regexUsername', () => {
-    if (/^[a-zA-Z0-9]+$/g.test(req.body.username)) {
+    if (/^[a-zA-Z0-9\s+]+$/g.test(req.body.username)) {
       return true
     } else {
       return false

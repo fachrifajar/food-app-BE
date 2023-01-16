@@ -238,7 +238,7 @@ const createUsers = async (req, res) => {
         password: hashedPassword,
         profile_picture,
         defaultPicture:
-          'https://res.cloudinary.com/daouvimjz/image/upload/v1671522875/Instagram_default_profile_kynrq6.jpg',
+          'https://res.cloudinary.com/daouvimjz/image/upload/v1673847179/blank-profile-picture-973460_tjapi1.png',
       })
 
       res.status(201).json({

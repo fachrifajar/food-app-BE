@@ -45,6 +45,8 @@ const login = async (req, res) => {
             message: `Success, User ${foundUsers[0].username} is logged in!`,
             data: {
               accessToken,
+              profilePicture: foundUsers[0]?.profile_picture,
+              username: foundUsers[0]?.username
             },
           })
         } catch (error) {
