@@ -1,7 +1,7 @@
 const db = require('../config/database')
 const models = require('../models/recipes')
 const { v4: uuidv4 } = require('uuid')
-const path = require('path')
+// const path = require('path')
 // const { clearLine } = require('readline')
 const { connectRedis } = require('../middleware/redis')
 const { cloudinary } = require('../middleware/upload')
@@ -37,6 +37,7 @@ const getAllRecipes = async (req, res) => {
         throw { code: 422, message: 'Data not found' }
       }
     }
+
     if (!titlez && !page && !limit && !sort) {
       getUsersData = totalDatas
       connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
@@ -114,6 +115,13 @@ const getAllRecipes = async (req, res) => {
         data: getAllData,
       })
     }
+
+    // const getRecipesBySlug = await models.getRecipesBySlug({ slug: titlez })
+    // res.json({
+    //   message: `Get Recipes With titles: ${titlez}`,
+    //   total: getUsersData.length,
+    //   data: getUsersData,
+    // })
   } catch (err) {
     res.status(err.code ?? 500).json({
       message: err,
@@ -318,7 +326,7 @@ const addPhotos = async (req, res) => {
 
 const addComments = async (req, res) => {
   try {
-    const { recipes_id, accounts_id, comment } = req.body
+    const { recipes_id, accounts_id, comment, test_time } = req.body
     const checkRecipesID = await models.checkRecipesIDbyRecipesID({
       recipes_id,
     })
@@ -332,6 +340,7 @@ const addComments = async (req, res) => {
       recipes_id,
       comment,
       accounts_id,
+      test_time,
     })
     res.json({
       message: 'data collected',

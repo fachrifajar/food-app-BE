@@ -9,24 +9,27 @@ const getCountRecipe = async () => {
 const getAllRecipesRelation = async () => {
   return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, array_agg(DISTINCT recipe_photos.photo) as recipe_photos, array_agg(DISTINCT recipe_videos.video) as recipe_videos, array_agg(DISTINCT comments.comment) as comments, recipes.created_at, recipes.slug
   FROM recipes 
-  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
+  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id    
   LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
   LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at`
 }
 
-//checked
+//checked 3x
 const getRecipesByNameRelation = async (params) => {
   const { title } = params
 
-  return await db`SELECT DISTINCT ON (recipes.recipes_id) recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, array_agg(DISTINCT recipe_photos.photo) as recipe_photos, array_agg(DISTINCT recipe_videos.video) as recipe_videos, array_agg(DISTINCT comments.comment) as comments, recipes.created_at, recipes.slug
-  FROM recipes 
-  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
-  LEFT JOIN recipe_photos ON recipes.accounts_id = recipe_photos.accounts_id 
-  LEFT JOIN recipe_videos ON recipes.accounts_id = recipe_videos.accounts_id 
-  LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
-  WHERE recipes.title ILIKE '%' || ${title} || '%'
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, 
+  (SELECT string_agg(photo, ',') FROM recipe_photos WHERE recipes.recipes_id = recipe_photos.recipes_id) as photos,
+  array_agg(DISTINCT recipe_videos.video) as recipe_videos,
+  array_agg(DISTINCT comments.comment) as comments,
+  recipes.created_at, recipes.slug
+FROM recipes 
+LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
+LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
+LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
+  WHERE recipes.slug LIKE '%' || ${title} || '%'
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at`
 }
 
@@ -153,15 +156,21 @@ const addPhotos = async (params) => {
 }
 
 const addComments = async (params) => {
-  const { recipes_id, comment, accounts_id } = params
+  const { recipes_id, comment, accounts_id, test_time } = params
 
-  return await db`INSERT INTO comments ("recipes_id","comment", "accounts_id") VALUES (${recipes_id}, ${comment}, ${accounts_id})`
+  return await db`INSERT INTO comments ("recipes_id","comment", "accounts_id", "test_time") VALUES (${recipes_id}, ${comment}, ${accounts_id}, ${test_time})`
 }
 
 const getRecipesByRecipesID = async (params) => {
   const { id } = params
 
   return await db`SELECT * FROM recipes WHERE recipes_id = ${id}`
+}
+
+const getRecipesBySlug = async (params) => {
+  const { slug } = params
+
+  return await db`SELECT * FROM recipes WHERE slug = ${slug}`
 }
 
 const editRecipes = async (params) => {
@@ -291,4 +300,5 @@ module.exports = {
   getCommentsByCommentsID,
   deleteComments,
   getCountRecipe,
+  getRecipesBySlug,
 }
