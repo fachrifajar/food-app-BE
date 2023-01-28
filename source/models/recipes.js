@@ -7,7 +7,7 @@ const getCountRecipe = async () => {
 
 //checked 2x
 const getAllRecipesRelation = async () => {
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, array_agg(DISTINCT recipe_photos.photo) as recipe_photos, array_agg(DISTINCT recipe_videos.video) as recipe_videos, array_agg(DISTINCT comments.comment) as comments, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id    
   LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
@@ -21,15 +21,15 @@ const getRecipesByNameRelation = async (params) => {
   const { title } = params
 
   return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, 
-  (SELECT string_agg(photo, ',') FROM recipe_photos WHERE recipes.recipes_id = recipe_photos.recipes_id) as photos,
-  array_agg(DISTINCT recipe_videos.video) as recipe_videos,
-  array_agg(DISTINCT comments.comment) as comments,
+  (SELECT string_agg(photo, ',') FROM recipe_photos WHERE recipes.recipes_id = recipe_photos.recipes_id) as photo,
+  array_agg(DISTINCT recipe_videos.video) as video,
+  array_agg(DISTINCT comments.comment) as comment,
   recipes.created_at, recipes.slug
 FROM recipes 
 LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
 LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
 LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
-  WHERE recipes.slug LIKE '%' || ${title} || '%'
+  WHERE recipes.slug ILIKE '%' || ${title} || '%'
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at`
 }
 
@@ -37,7 +37,7 @@ LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id
 const getAllRecipesRelationPaginationSort = async (params) => {
   const { sort, limit, page } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, array_agg(DISTINCT recipe_photos.photo) as recipe_photos, array_agg(DISTINCT recipe_videos.video) as recipe_videos, array_agg(DISTINCT comments.comment) as comments, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
@@ -54,7 +54,7 @@ const getAllRecipesRelationPaginationSort = async (params) => {
 const getAllRecipesRelationPagination = async (params) => {
   const { limit, page } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, array_agg(DISTINCT recipe_photos.photo) as recipe_photos, array_agg(DISTINCT recipe_videos.video) as recipe_videos, array_agg(DISTINCT comments.comment) as comments, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
@@ -69,7 +69,7 @@ const getAllRecipesRelationPagination = async (params) => {
 const getAllRecipesRelationSort = async (params) => {
   const { sort } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, array_agg(DISTINCT recipe_photos.photo) as recipe_photos, array_agg(DISTINCT recipe_videos.video) as recipe_videos, array_agg(DISTINCT comments.comment) as comments, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
