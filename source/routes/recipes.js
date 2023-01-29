@@ -18,6 +18,7 @@ router.post(
 router.post(
   '/add/videos',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middlewareUpload.filesPayLoadExist,
   middlewareUpload.fileExtLimiter([
     '.mp4',
@@ -45,6 +46,7 @@ router.post(
 router.post(
   '/add/photos/',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middlewareUpload.filesPayLoadExist,
   middlewareUpload.fileExtLimiter([
     '.png',
@@ -62,11 +64,12 @@ router.post(
 router.post(
   '/add/comments',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.addCommentValidator,
   recipesController.addComments
 )
 
-// READ
+// READ, NEW UPDATE SORT BY sortType, "1" => sort by title ASC, "2" => sort by created_at DESC
 router.get(
   '/search/:titlez?',
   // authMiddleware.validateToken,
@@ -84,6 +87,7 @@ router.get(
 router.patch(
   '/edit/:id',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.updateRecipesValidator,
   recipesController.updateRecipes
 )
@@ -92,6 +96,7 @@ router.patch(
 router.delete(
   '/delete/recipes/:id',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.deleteValidator,
   recipesController.deleteRecipes
 )
@@ -99,6 +104,7 @@ router.delete(
 router.delete(
   '/delete/videos/:id',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.deleteValidator,
   recipesController.deleteVideos
 )
@@ -106,6 +112,7 @@ router.delete(
 router.delete(
   '/delete/photos/:id',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.deleteValidator,
   recipesController.deletePhotos
 )
@@ -113,6 +120,7 @@ router.delete(
 router.delete(
   '/delete/comments/:id',
   authMiddleware.validateToken,
+  authMiddleware.validateRole,
   middleware.deleteValidator,
   recipesController.deleteComments
 )

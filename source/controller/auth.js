@@ -47,6 +47,9 @@ const login = async (req, res) => {
               accessToken,
               profilePicture: foundUsers[0]?.profile_picture,
               username: foundUsers[0]?.username,
+              email: foundUsers[0]?.email,
+              accounts_id: foundUsers[0]?.accounts_id,
+              phoneNumber: foundUsers[0]?.phone_number,
             },
           })
         } catch (error) {

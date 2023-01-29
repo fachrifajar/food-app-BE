@@ -96,7 +96,8 @@ const updateUsersPartial = async (params) => {
    phone_number = ${phone_number || defaultValue?.phone_number},
    username = ${username || defaultValue?.username},
    password =${password || defaultValue?.password},
-   profile_picture = ${profile_picture || defaultValue?.profile_picture}
+   profile_picture = ${profile_picture || defaultValue?.profile_picture},
+   updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
   WHERE accounts_id = ${id} `
 }
 
@@ -122,6 +123,12 @@ const createUsers = async (params) => {
   })`
 }
 
+const getRoles = async (params) => {
+  const { roleValidator } = params
+
+  return await db`SELECT role from accounts WHERE accounts_id = ${roleValidator}`
+}
+
 module.exports = {
   getAllUsers,
   getUsersByID,
@@ -138,4 +145,5 @@ module.exports = {
   createUsers,
   checkRole,
   checkValidUsers,
+  getRoles,
 }

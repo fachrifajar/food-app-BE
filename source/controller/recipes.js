@@ -202,30 +202,31 @@ const getAllRecipes2 = async (req, res) => {
 
 const addRecipes = async (req, res) => {
   try {
-    const { accounts_id, title, ingredients } = req.body
-    const checkID = await models.checkAccByID({ accounts_id })
+    const { accounts_id, title, ingredients, slug } = req.body
+
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
     const getTitle = await models.checkRecipesByTitle({ title })
 
-    if (checkID.length == 0) {
-      throw { code: 400, message: 'ID not identified' }
-    }
+    let titleConvert = title.replace(/ /g, '-').toLowerCase()
 
     if (getTitle.length !== 0) {
       throw { code: 403, message: 'Title already exist' }
     }
 
     const addRecipes = await models.addRecipes({
-      accounts_id,
+      accounts_id: roleValidator,
       title,
       ingredients,
+      slug: titleConvert,
     })
     res.json({
       message: 'data collected',
       data: req.body,
     })
   } catch (error) {
-    res.status(error.code ?? 500).json({
-      message: error.message ?? error,
+    const statusCode = error.code || 500
+    res.status(statusCode).json({
+      message: error.message || 'An error occurred',
     })
   }
 }
@@ -236,40 +237,54 @@ const addVideos = async (req, res) => {
     const checkRecipesID = await models.checkRecipesIDbyRecipesID({
       recipes_id,
     })
-    const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
+    // const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
-    if (checkRecipesID.length == 0) {
-      throw { code: 400, message: 'ID not identified' }
-    }
+    // if (checkRecipesID.length == 0) {
+    //   throw { code: 400, message: 'ID not identified' }
+    // }
 
-    if (req.files) {
-      let file = req.files.video
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
+    const getRole = await models.getRoles({ roleValidator })
+    const isAdmin = getRole[0]?.role
 
-      cloudinary.v2.uploader.upload(
-        file.tempFilePath,
-        { resource_type: 'video', public_id: uuidv4() },
-        async function (error, result) {
-          try {
-            if (error) {
-              throw 'Upload failed'
+    const validateRecipesId = await models.validateRecipesId({ recipes_id })
+    const recipesIdvalidator = validateRecipesId[0]?.accounts_id
+
+    if (isAdmin == 'ADMIN' || roleValidator == recipesIdvalidator) {
+      if (req.files) {
+        let file = req.files.video
+
+        cloudinary.v2.uploader.upload(
+          file.tempFilePath,
+          { resource_type: 'video', public_id: uuidv4() },
+          async function (error, result) {
+            try {
+              if (error) {
+                throw 'Upload failed'
+              }
+              await models.addVideos({
+                recipes_id,
+                video: result.public_id,
+                accounts_id: roleValidator,
+              })
+              res.json({
+                message: 'video uploaded',
+                data: req.body,
+              })
+            } catch (error) {
+              res.status(error.code ?? 500).json({
+                message: error,
+              })
             }
-            await models.addVideos({
-              recipes_id,
-              video: result.public_id,
-              accounts_id: checkAccID[0].accounts_id,
-              checkAccID,
-            })
-            res.json({
-              message: 'video uploaded',
-              data: req.body,
-            })
-          } catch (error) {
-            res.status(error.code ?? 500).json({
-              message: error,
-            })
           }
-        }
-      )
+        )
+      }
+    } else {
+      throw {
+        code: 401,
+        message:
+          'Access not granted, only admin & valid user can access this section!',
+      }
     }
   } catch (error) {
     res.status(error.code ?? 500).json({
@@ -284,39 +299,50 @@ const addPhotos = async (req, res) => {
     const checkRecipesID = await models.checkRecipesIDbyRecipesID({
       recipes_id,
     })
-    const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
-    if (checkRecipesID.length == 0) {
-      throw { code: 400, message: 'ID not identified' }
-    }
-    if (req.files) {
-      let file = req.files.photo
 
-      cloudinary.v2.uploader.upload(
-        file.tempFilePath,
-        { public_id: uuidv4() },
-        async function (error, result) {
-          try {
-            if (error) {
-              throw 'Upload failed'
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
+    const getRole = await models.getRoles({ roleValidator })
+    const isAdmin = getRole[0]?.role
+
+    const validateRecipesId = await models.validateRecipesId({ recipes_id })
+    const recipesIdvalidator = validateRecipesId[0]?.accounts_id
+
+    if (isAdmin == 'ADMIN' || roleValidator == recipesIdvalidator) {
+      if (req.files) {
+        let file = req.files.photo
+
+        cloudinary.v2.uploader.upload(
+          file.tempFilePath,
+          { public_id: uuidv4() },
+          async function (error, result) {
+            try {
+              if (error) {
+                throw 'Upload failed'
+              }
+
+              await models.addPhotos({
+                recipes_id,
+                photo: result.public_id,
+                accounts_id: roleValidator,
+              })
+              res.json({
+                message: 'photo uploaded',
+                data: req.body,
+              })
+            } catch (error) {
+              res.status(error?.code ?? 500).json({
+                message: error,
+              })
             }
-
-            await models.addPhotos({
-              recipes_id,
-              photo: result.public_id,
-              accounts_id: checkAccID[0].accounts_id,
-              checkAccID,
-            })
-            res.json({
-              message: 'photo uploaded',
-              data: req.body,
-            })
-          } catch (error) {
-            res.status(error?.code ?? 500).json({
-              message: error,
-            })
           }
-        }
-      )
+        )
+      }
+    } else {
+      throw {
+        code: 401,
+        message:
+          'Access not granted, only admin & valid user can access this section!',
+      }
     }
   } catch (err) {
     res.status(err?.code ?? 500).json({
@@ -327,21 +353,21 @@ const addPhotos = async (req, res) => {
 
 const addComments = async (req, res) => {
   try {
-    const { recipes_id, accounts_id, comment, test_time } = req.body
+    const { recipes_id, comment } = req.body
     const checkRecipesID = await models.checkRecipesIDbyRecipesID({
       recipes_id,
     })
-    const checkAccID = await models.checkAccIDByRecipesID({ recipes_id })
 
     if (checkRecipesID.length == 0) {
-      throw { code: 400, message: 'ID not identified' }
+      throw { code: 400, message: 'Recipes not identified' }
     }
+
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
 
     const addcomment = await models.addComments({
       recipes_id,
       comment,
-      accounts_id,
-      test_time,
+      accounts_id: roleValidator,
     })
     res.json({
       message: 'data collected',
@@ -356,7 +382,7 @@ const addComments = async (req, res) => {
 
 const updateRecipes = async (req, res) => {
   try {
-    const { id } = req.params
+    const { id } = req.params //recipes_id
     const {
       recipes_id,
       accounts_id,
@@ -365,180 +391,201 @@ const updateRecipes = async (req, res) => {
       photo,
       video,
       comment,
+      slug,
     } = req.body
+
     const getAllData = await models.getRecipesByRecipesID({ id })
+    let titleConvert = title.replace(/ /g, '-').toLowerCase()
 
-    if (!req.files) {
-      if (
-        (recipes_id || accounts_id || title || ingredients) !== undefined &&
-        (photo || video) == undefined &&
-        comment == undefined
-      ) {
-        if (getAllData.length == 0) {
-          throw { code: 400, message: 'accounts_ID not identified' }
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
+    const getRole = await models.getRoles({ roleValidator })
+    const isAdmin = getRole[0]?.role
+
+    const validateRecipesId = await models.validateRecipesId({
+      recipes_id: id,
+    })
+    const recipesIdvalidator = validateRecipesId[0]?.accounts_id
+
+    if (isAdmin == 'ADMIN' || roleValidator == recipesIdvalidator) {
+      if (!req.files) {
+        if (
+          (recipes_id || accounts_id || title || ingredients) !== undefined &&
+          (photo || video) == undefined &&
+          comment == undefined
+        ) {
+          if (getAllData.length == 0) {
+            throw { code: 400, message: 'accounts_ID not identified' }
+          }
+          const editRecipes = await models.editRecipes({
+            title,
+            ingredients,
+            id,
+            slug: titleConvert,
+            getAllData: getAllData[0],
+          })
         }
-        const editRecipes = await models.editRecipes({
-          title,
-          ingredients,
-          id,
-          getAllData: getAllData[0],
-        })
+
+        if (
+          (recipes_id || accounts_id || title || ingredients) == undefined &&
+          (photo || video) == undefined &&
+          comment !== undefined
+        ) {
+          const checkCommID = await models.checkComment({ id })
+
+          if (checkCommID.length !== 1) {
+            throw { code: 400, message: 'comments_ID not identified' }
+          }
+
+          const editComments = await models.editComments({
+            comment,
+            checkCommID: checkCommID[0],
+            id,
+          })
+        }
+      } else {
+        if (
+          (recipes_id || accounts_id || title || ingredients) == undefined &&
+          (req.files.photo || req.files.video) !== undefined &&
+          comment == undefined
+        ) {
+          const checkPhtID = await models.checkPhotosByID({ id })
+          if (req.files.photo !== undefined && req.files.video == undefined) {
+            if (checkPhtID.length !== 1) {
+              throw { code: 400, message: 'photos_ID not identified' }
+            } else {
+              let file = req.files.photo
+              let mimeType = file.mimetype.split('/')[1]
+              let allowedFile = ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG']
+              let MB = 2
+
+              if (allowedFile.find((item) => item == mimeType)) {
+                if (file.size > MB * 1024 * 1024) {
+                  const message =
+                    `Upload failed. ${file.name.toString()} is over the file size limit of ${MB} MB.`.replaceAll(
+                      ',',
+                      ', '
+                    )
+                  throw { code: 413, message }
+                }
+
+                cloudinary.v2.uploader.destroy(
+                  checkPhtID[0].photo,
+                  function (error, result) {
+                    console.log(result, error)
+                  }
+                )
+
+                cloudinary.v2.uploader.upload(
+                  file.tempFilePath,
+                  { public_id: uuidv4() },
+                  async function (error, result) {
+                    if (error) {
+                      // throw 'Upload failed'
+                      throw new Error(400)
+                    }
+                    await models.editPhotos({
+                      photo: result.public_id,
+                      checkPhtID,
+                      id,
+                    })
+                  }
+                )
+                res.json({
+                  status: 'true',
+                  message: 'photo updated',
+                  data: {
+                    id,
+                    ...req.body,
+                  },
+                })
+              } else {
+                const message =
+                  `Upload failed. Only ${allowedFile.toString()} files allowed.`.replaceAll(
+                    ',',
+                    ', '
+                  )
+                throw { code: 422, message }
+              }
+            }
+          }
+
+          if (req.files.video !== undefined && req.files.photo == undefined) {
+            const checkVidID = await models.checkVideosByID({ id })
+            if (checkVidID.length !== 1) {
+              throw { code: 400, message: 'videos_ID not identified' }
+            } else {
+              let file = req.files.video
+              let mimeType = file.name.split('.')[1]
+              let allowedVid = ['mp4', 'mkv', 'MP4', 'MKV']
+              let MB = 200
+
+              if (allowedVid.find((item) => item == mimeType)) {
+                if (file.size > MB * 1024 * 1024) {
+                  const message =
+                    `Upload failed. ${file.name.toString()} is over the file size limit of ${MB} MB.`.replaceAll(
+                      ',',
+                      ', '
+                    )
+                  throw { code: 413, message }
+                }
+
+                cloudinary.v2.uploader.destroy(
+                  checkVidID[0].video,
+                  { resource_type: 'video' },
+                  function (error, result) {
+                    console.log(result, error)
+                  }
+                )
+
+                cloudinary.v2.uploader.upload(
+                  file.tempFilePath,
+                  { resource_type: 'video', public_id: uuidv4() },
+                  async function (error, result) {
+                    if (error) {
+                      throw 'Upload failed'
+                    }
+                    const editvideos = await models.editVideos({
+                      video: result.public_id,
+                      checkVidID,
+                      id,
+                    })
+                  }
+                )
+                res.json({
+                  status: 'true',
+                  message: 'video updated',
+                  data: {
+                    id,
+                    ...req.body,
+                  },
+                })
+              } else {
+                const message =
+                  `Upload failed. Only ${allowedVid.toString()} files allowed.`.replaceAll(
+                    ',',
+                    ', '
+                  )
+                throw { code: 422, message }
+              }
+            }
+          }
+        }
       }
 
-      if (
-        (recipes_id || accounts_id || title || ingredients) == undefined &&
-        (photo || video) == undefined &&
-        comment !== undefined
-      ) {
-        const checkCommID = await models.checkComment({ id })
-
-        if (checkCommID.length !== 1) {
-          throw { code: 400, message: 'comments_ID not identified' }
-        }
-
-        const editComments = await models.editComments({
-          comment,
-          checkCommID: checkCommID[0],
+      res.json({
+        message: 'Data updated',
+        data: {
           id,
-        })
-      }
+          ...req.body,
+        },
+      })
     } else {
-      if (
-        (recipes_id || accounts_id || title || ingredients) == undefined &&
-        (req.files.photo || req.files.video) !== undefined &&
-        comment == undefined
-      ) {
-        const checkPhtID = await models.checkPhotosByID({ id })
-        if (req.files.photo !== undefined && req.files.video == undefined) {
-          if (checkPhtID.length !== 1) {
-            throw { code: 400, message: 'photos_ID not identified' }
-          } else {
-            let file = req.files.photo
-            let mimeType = file.mimetype.split('/')[1]
-            let allowedFile = ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG']
-            let MB = 2
-
-            if (allowedFile.find((item) => item == mimeType)) {
-              if (file.size > MB * 1024 * 1024) {
-                const message =
-                  `Upload failed. ${file.name.toString()} is over the file size limit of ${MB} MB.`.replaceAll(
-                    ',',
-                    ', '
-                  )
-                throw { code: 413, message }
-              }
-
-              cloudinary.v2.uploader.destroy(
-                checkPhtID[0].photo,
-                function (error, result) {
-                  console.log(result, error)
-                }
-              )
-
-              cloudinary.v2.uploader.upload(
-                file.tempFilePath,
-                { public_id: uuidv4() },
-                async function (error, result) {
-                  if (error) {
-                    // throw 'Upload failed'
-                    throw new Error(400)
-                  }
-                  await models.editPhotos({
-                    photo: result.public_id,
-                    checkPhtID,
-                    id,
-                  })
-                }
-              )
-              res.json({
-                status: 'true',
-                message: 'photo updated',
-                data: {
-                  id,
-                  ...req.body,
-                },
-              })
-            } else {
-              const message =
-                `Upload failed. Only ${allowedFile.toString()} files allowed.`.replaceAll(
-                  ',',
-                  ', '
-                )
-              throw { code: 422, message }
-            }
-          }
-        }
-
-        if (req.files.video !== undefined && req.files.photo == undefined) {
-          const checkVidID = await models.checkVideosByID({ id })
-          if (checkVidID.length !== 1) {
-            throw { code: 400, message: 'videos_ID not identified' }
-          } else {
-            let file = req.files.video
-            let mimeType = file.name.split('.')[1]
-            let allowedVid = ['mp4', 'mkv', 'MP4', 'MKV']
-            let MB = 200
-
-            if (allowedVid.find((item) => item == mimeType)) {
-              if (file.size > MB * 1024 * 1024) {
-                const message =
-                  `Upload failed. ${file.name.toString()} is over the file size limit of ${MB} MB.`.replaceAll(
-                    ',',
-                    ', '
-                  )
-                throw { code: 413, message }
-              }
-
-              cloudinary.v2.uploader.destroy(
-                checkVidID[0].video,
-                { resource_type: 'video' },
-                function (error, result) {
-                  console.log(result, error)
-                }
-              )
-
-              cloudinary.v2.uploader.upload(
-                file.tempFilePath,
-                { resource_type: 'video', public_id: uuidv4() },
-                async function (error, result) {
-                  if (error) {
-                    throw 'Upload failed'
-                  }
-                  const editvideos = await models.editVideos({
-                    video: result.public_id,
-                    checkVidID,
-                    id,
-                  })
-                }
-              )
-              res.json({
-                status: 'true',
-                message: 'video updated',
-                data: {
-                  id,
-                  ...req.body,
-                },
-              })
-            } else {
-              const message =
-                `Upload failed. Only ${allowedVid.toString()} files allowed.`.replaceAll(
-                  ',',
-                  ', '
-                )
-              throw { code: 422, message }
-            }
-          }
-        }
+      throw {
+        code: 401,
+        message:
+          'Access not granted, only admin & valid user can access this section!',
       }
     }
-
-    res.json({
-      message: 'Data updated',
-      data: {
-        id,
-        ...req.body,
-      },
-    })
   } catch (err) {
     res.status(err.code ?? 500).json({
       message: err,

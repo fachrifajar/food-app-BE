@@ -313,10 +313,11 @@ const updateUsersPartial = async (req, res) => {
     const { email, phone_number, username, password, profile_picture } =
       req.body
 
-    const checkId = id
-    const roleValidator = req.userId
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
+    const getRole = await models.getRoles({ roleValidator })
+    const isAdmin = getRole[0]?.role
 
-    if (checkId == roleValidator) {
+    if (isAdmin == 'ADMIN' || roleValidator == id) {
       const getAllData = await models.getUsersByID({ id })
 
       if (!req.files) {
@@ -454,7 +455,11 @@ const updateUsersPartial = async (req, res) => {
         }
       }
     } else {
-      throw { code: 401 }
+      throw {
+        code: 401,
+        message:
+          'Access not granted, only admin & valid user can access this section!',
+      }
     }
   } catch (error) {
     if (error.code !== 500) {
@@ -614,14 +619,26 @@ const deleteUsers = async (req, res) => {
     const { id } = req.params
     const getAllData = await models.getUsersByID({ id })
 
-    await models.deleteUsers({ id })
-    res.json({
-      status: 'true',
-      message: 'DATA DELETED!',
-    })
+    const roleValidator = req.accounts_id || null // middleware for roleValidator
+    const getRole = await models.getRoles({ roleValidator })
+    const isAdmin = getRole[0]?.role
+
+    if (isAdmin == 'ADMIN' || roleValidator == id) {
+      await models.deleteUsers({ id })
+      res.json({
+        status: 'true',
+        message: 'DATA DELETED!',
+      })
+    } else {
+      throw {
+        code: 401,
+        message:
+          'Access not granted, only admin & valid user can access this section!',
+      }
+    }
   } catch (error) {
-    res.status(500).json({
-      message: error,
+    res.status(error?.code ?? 500).json({
+      message: error.message ?? error,
     })
   }
 }

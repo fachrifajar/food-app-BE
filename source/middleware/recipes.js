@@ -2,7 +2,6 @@ const { Validator, addCustomMessages, extend } = require('node-input-validator')
 
 const createRecipesValidator = (req, res, next) => {
   const rules = new Validator(req.body, {
-    accounts_id: 'required',
     title: 'required|minLength:4|maxLength:20',
     ingredients: 'required|minLength:5',
   })

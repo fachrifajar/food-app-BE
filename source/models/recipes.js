@@ -130,9 +130,9 @@ const checkAccByID = async (params) => {
 }
 
 const addRecipes = async (params) => {
-  const { accounts_id, title, ingredients } = params
+  const { accounts_id, title, ingredients, slug, roleValidator } = params
 
-  return await db`INSERT INTO recipes ("accounts_id", "title", "ingredients") VALUES (${accounts_id}, ${title}, ${ingredients})`
+  return await db`INSERT INTO recipes ("accounts_id", "title", "ingredients", "slug") VALUES (${accounts_id}, ${title}, ${ingredients}, ${slug})`
 }
 
 const checkRecipesByTitle = async (params) => {
@@ -154,21 +154,21 @@ const checkAccIDByRecipesID = async (params) => {
 }
 
 const addVideos = async (params) => {
-  const { recipes_id, video, checkAccID } = params
+  const { recipes_id, video, accounts_id, roleValidator } = params
 
-  return await db`INSERT INTO recipe_videos ("recipes_id","video", "accounts_id") VALUES (${recipes_id}, ${video}, ${checkAccID[0].accounts_id})`
+  return await db`INSERT INTO recipe_videos ("recipes_id","video", "accounts_id") VALUES (${recipes_id}, ${video}, ${accounts_id})`
 }
 
 const addPhotos = async (params) => {
-  const { recipes_id, photo, checkAccID } = params
+  const { recipes_id, photo, accounts_id, roleValidator } = params
 
-  return await db`INSERT INTO recipe_photos ("recipes_id","photo", "accounts_id") VALUES (${recipes_id}, ${photo}, ${checkAccID[0].accounts_id})`
+  return await db`INSERT INTO recipe_photos ("recipes_id","photo", "accounts_id") VALUES (${recipes_id}, ${photo}, ${accounts_id})`
 }
 
 const addComments = async (params) => {
-  const { recipes_id, comment, accounts_id, test_time } = params
+  const { recipes_id, comment, accounts_id, roleValidator } = params
 
-  return await db`INSERT INTO comments ("recipes_id","comment", "accounts_id", "test_time") VALUES (${recipes_id}, ${comment}, ${accounts_id}, ${test_time})`
+  return await db`INSERT INTO comments ("recipes_id","comment", "accounts_id") VALUES (${recipes_id}, ${comment}, ${accounts_id})`
 }
 
 const getRecipesByRecipesID = async (params) => {
@@ -184,11 +184,13 @@ const getRecipesBySlug = async (params) => {
 }
 
 const editRecipes = async (params) => {
-  const { title, ingredients, id, getAllData } = params
+  const { title, ingredients, id, getAllData, slug } = params
 
   return await db`UPDATE recipes
     SET title = ${title || getAllData?.title},
-      ingredients = ${ingredients || getAllData?.ingredients}
+      ingredients = ${ingredients || getAllData?.ingredients},
+      slug = ${slug || getAllData?.slug},
+      updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
     WHERE recipes_id = ${id} `
 }
 
@@ -208,7 +210,8 @@ const editPhotos = async (params) => {
   const { photo, checkPhtID, id } = params
 
   return await db`UPDATE recipe_photos
-    SET photo = ${photo || checkPhtID[0]?.photo}
+    SET photo = ${photo || checkPhtID[0]?.photo},   
+    updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
     WHERE photos_id = ${id}`
 }
 
@@ -216,7 +219,8 @@ const editVideos = async (params) => {
   const { video, checkVidID, id } = params
 
   return await db`UPDATE recipe_videos
-    SET video = ${video || checkVidID[0]?.video}
+    SET video = ${video || checkVidID[0]?.video},
+    updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
     WHERE videos_id = ${id}`
 }
 
@@ -230,7 +234,8 @@ const editComments = async (params) => {
   const { comment, checkCommID, id } = params
 
   return await db`UPDATE comments
-    SET comment = ${comment || checkCommID?.comment}
+    SET comment = ${comment || checkCommID?.comment},
+    updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
     WHERE comments_id = ${id}`
 }
 
@@ -276,6 +281,18 @@ const deleteComments = async (params) => {
   return await db`DELETE FROM comments WHERE comments_id = ${id}`
 }
 
+const getRoles = async (params) => {
+  const { roleValidator } = params
+
+  return await db`SELECT role from accounts WHERE accounts_id = ${roleValidator}`
+}
+
+const validateRecipesId = async (params) => {
+  const { recipes_id } = params
+
+  return await db`SELECT * from recipes WHERE recipes_id = ${recipes_id}`
+}
+
 module.exports = {
   getAllRecipesRelation,
   getRecipesByNameRelation,
@@ -311,4 +328,6 @@ module.exports = {
   deleteComments,
   getCountRecipe,
   getRecipesBySlug,
+  getRoles,
+  validateRecipesId,
 }
