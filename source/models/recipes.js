@@ -35,7 +35,7 @@ LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id
 
 //checked
 const getAllRecipesRelationPaginationSort = async (params) => {
-  const { sort, limit, page } = params
+  const { sort, limit, page, sortType } = params
 
   return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
@@ -45,7 +45,13 @@ const getAllRecipesRelationPaginationSort = async (params) => {
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at  ${
     sort
-      ? db`ORDER BY recipes.created_at DESC`
+      ? sortType === '1'
+        ? db`ORDER BY recipes.title ASC`
+        : sortType === '2'
+        ? db`ORDER BY recipes.created_at DESC`
+        : // : sortType === '3'
+          // ? db`ORDER BY recipes.likes DESC`
+          db`ORDER BY recipes.created_at ASC`
       : db`ORDER BY recipes.created_at ASC`
   } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
 }
@@ -67,7 +73,7 @@ const getAllRecipesRelationPagination = async (params) => {
 
 //checked 2x
 const getAllRecipesRelationSort = async (params) => {
-  const { sort } = params
+  const { sort, sortType } = params
 
   return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
@@ -76,11 +82,15 @@ const getAllRecipesRelationSort = async (params) => {
   LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at 
-   ${
-     sort
-       ? db`ORDER BY recipes.recipes_id DESC`
-       : db`ORDER BY recipes.recipes_id ASC`
-   } 
+  ${
+    sort
+      ? sortType === '1'
+        ? db`ORDER BY recipes.title ASC`
+        : sortType === '2'
+        ? db`ORDER BY recipes.created_at DESC`
+        : db`ORDER BY recipes.created_at ASC`
+      : db`ORDER BY recipes.created_at ASC`
+  }
   `
 }
 

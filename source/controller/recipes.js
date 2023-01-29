@@ -9,7 +9,7 @@ const { cloudinary } = require('../middleware/upload')
 const getAllRecipes = async (req, res) => {
   try {
     const { titlez } = req.params
-    const { page, limit, sort } = req.query
+    const { page, limit, sort, sortType } = req.query
     const totalDatas = await models.getAllRecipesRelation()
     let getUsersData
     let getAllData
@@ -61,6 +61,7 @@ const getAllRecipes = async (req, res) => {
           sort,
           page,
           limit,
+          sortType,
         })
         connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
         connectRedis.set('is_paginated', true, 'ex', 10)
@@ -93,7 +94,7 @@ const getAllRecipes = async (req, res) => {
         connectRedis.set('page', page, 'ex', 10)
         connectRedis.set('limit', limit, 'ex', 10)
       } else if (sort) {
-        getAllData = await models.getAllRecipesRelationSort({ sort })
+        getAllData = await models.getAllRecipesRelationSort({ sort, sortType })
         connectRedis.set('url_getAllRecipes', req.originalUrl, 'ex', 10)
         connectRedis.set('data_sort', JSON.stringify(getAllData), 'ex', 10)
         connectRedis.set('total_data_sort', getAllData?.length, 'ex', 10)
