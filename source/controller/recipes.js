@@ -522,7 +522,10 @@ const updateRecipes = async (req, res) => {
     } = req.body
     console.log('test1')
     const getAllData = await models.getRecipesByRecipesID({ id })
-    let titleConvert = title.replace(/ /g, '-').toLowerCase()
+
+    if (title) {
+      let titleConvert = title.replace(/ /g, '-').toLowerCase()
+    }
     console.log('test2')
     const roleValidator = req.accounts_id || null // middleware for roleValidator
     console.log('test3')
@@ -553,7 +556,7 @@ const updateRecipes = async (req, res) => {
             title,
             ingredients,
             id,
-            slug: titleConvert,
+            slug: title ? titleConvert : null,
             getAllData: getAllData[0],
           })
         }
@@ -614,7 +617,7 @@ const updateRecipes = async (req, res) => {
                 title,
                 ingredients,
                 id,
-                slug: titleConvert,
+                slug: title ? titleConvert : null,
                 getAllData: getAllData[0],
                 photo: result.public_id,
               })
