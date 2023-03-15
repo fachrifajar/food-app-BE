@@ -83,6 +83,8 @@ router.get(
   recipesController.getAllRecipes2
 ) //? sort by nama
 
+router.get('/search/myrecipe/:id', recipesController.getMyRecipes)
+
 // UPDATE
 router.patch(
   '/edit/:id',
@@ -90,6 +92,14 @@ router.patch(
   authMiddleware.validateRole,
   middleware.updateRecipesValidator,
   recipesController.updateRecipes
+)
+
+// UPDATE
+router.patch(
+  '/edit/add/:id',
+  authMiddleware.validateToken,
+  authMiddleware.validateRole,
+  recipesController.updateSave
 )
 
 // DELETE

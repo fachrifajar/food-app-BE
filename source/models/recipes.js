@@ -7,10 +7,17 @@ const getCountRecipe = async () => {
 
 //checked 2x
 const getAllRecipesRelation = async () => {
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  // return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  // FROM recipes
+  // LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id
+  // LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id
+  // LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id
+  // LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id
+  // GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at`
+
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id    
-  LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
   LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at`
@@ -21,7 +28,7 @@ const getRecipesByNameRelation = async (params) => {
   const { title } = params
 
   return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, 
-  (SELECT string_agg(photo, ',') FROM recipe_photos WHERE recipes.recipes_id = recipe_photos.recipes_id) as photo,
+  recipes.photo,
   array_agg(DISTINCT recipe_videos.video) as video,
   array_agg(DISTINCT comments.comment) as comment,
   recipes.created_at, recipes.slug
@@ -37,10 +44,9 @@ LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id
 const getAllRecipesRelationPaginationSort = async (params) => {
   const { sort, limit, page, sortType } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
-  LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
   LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at  ${
@@ -56,14 +62,44 @@ const getAllRecipesRelationPaginationSort = async (params) => {
   } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
 }
 
+const getMyRecipePagination = async (params) => {
+  const { userId, limit, page, sort } = params
+
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  FROM recipes 
+  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id    
+  LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
+  LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
+  WHERE recipes.accounts_id = ${userId}
+  GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at
+  ${
+    sort
+      ? db`ORDER BY recipes.created_at DESC`
+      : db`ORDER BY recipes.created_at ASC`
+  }
+  LIMIT ${limit} OFFSET ${limit * (page - 1)}`
+}
+
+const getMyRecipe = async (params) => {
+  const { userId } = params
+
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  FROM recipes 
+  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id    
+  LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
+  LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
+  WHERE recipes.accounts_id = ${userId}
+  GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at
+`
+}
+
 //checked 2x
 const getAllRecipesRelationPagination = async (params) => {
   const { limit, page } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
-  LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
   LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at   LIMIT ${limit} OFFSET ${
@@ -75,10 +111,9 @@ const getAllRecipesRelationPagination = async (params) => {
 const getAllRecipesRelationSort = async (params) => {
   const { sort, sortType } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, string_agg(DISTINCT recipe_photos.photo, ',') as photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, array_agg(DISTINCT recipe_videos.video) as video, array_agg(DISTINCT comments.comment) as comment, recipes.created_at, recipes.slug
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
-  LEFT JOIN recipe_photos ON recipes.recipes_id = recipe_photos.recipes_id 
   LEFT JOIN recipe_videos ON recipes.recipes_id = recipe_videos.recipes_id 
   LEFT JOIN comments ON recipes.recipes_id = comments.recipes_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at 
@@ -130,9 +165,10 @@ const checkAccByID = async (params) => {
 }
 
 const addRecipes = async (params) => {
-  const { accounts_id, title, ingredients, slug, roleValidator } = params
+  const { accounts_id, title, ingredients, slug, roleValidator, video, photo } =
+    params
 
-  return await db`INSERT INTO recipes ("accounts_id", "title", "ingredients", "slug") VALUES (${accounts_id}, ${title}, ${ingredients}, ${slug})`
+  return await db`INSERT INTO recipes ("accounts_id", "title", "ingredients", "slug", "video", "photo") VALUES (${accounts_id}, ${title}, ${ingredients}, ${slug}, ${video}, ${photo})`
 }
 
 const checkRecipesByTitle = async (params) => {
@@ -203,16 +239,19 @@ const checkVideosByID = async (params) => {
 const checkPhotosByID = async (params) => {
   const { id } = params
 
-  return await db`SELECT * FROM recipe_photos WHERE photos_id = ${id}`
+  return await db`SELECT * FROM recipes WHERE recipes_id = ${id}`
 }
 
 const editPhotos = async (params) => {
-  const { photo, checkPhtID, id } = params
+  const { title, ingredients, id, getAllData, slug, photo } = params
 
-  return await db`UPDATE recipe_photos
-    SET photo = ${photo || checkPhtID[0]?.photo},   
-    updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
-    WHERE photos_id = ${id}`
+  return await db`UPDATE recipes
+    SET title = ${title || getAllData?.title},
+      ingredients = ${ingredients || getAllData?.ingredients},
+      slug = ${slug || getAllData?.slug},
+      photo = ${photo || getAllData?.photo},
+      updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
+    WHERE recipes_id = ${id} `
 }
 
 const editVideos = async (params) => {
@@ -330,4 +369,6 @@ module.exports = {
   getRecipesBySlug,
   getRoles,
   validateRecipesId,
+  getMyRecipe,
+  getMyRecipePagination,
 }
