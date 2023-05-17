@@ -36,6 +36,7 @@ const login = async (req, res) => {
             { expiresIn: '1d' }
           )
           await models.updateRefToken({ email: email, refreshToken })
+
           res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             maxAge: 24 * 60 * 60 * 1000,
@@ -45,11 +46,9 @@ const login = async (req, res) => {
             message: `Success, User ${foundUsers[0].username} is logged in!`,
             data: {
               accessToken,
+              refreshToken,
               profilePicture: foundUsers[0]?.profile_picture,
-              username: foundUsers[0]?.username,
-              email: foundUsers[0]?.email,
               accounts_id: foundUsers[0]?.accounts_id,
-              phoneNumber: foundUsers[0]?.phone_number,
             },
           })
         } catch (error) {
@@ -71,28 +70,31 @@ const login = async (req, res) => {
 const refreshToken = async (req, res) => {
   try {
     const refreshToken = req.cookies.refreshToken
+
     if (!refreshToken) {
-      throw { code: 401 }
+      throw { code: 401, message: 'Refresh token not provided' }
     }
     const user = await models.checkRefToken({ refreshToken })
     if (!user[0]) {
-      throw { code: 403 }
+      throw { code: 403, message: 'Invalid refresh token' }
     }
     jwt.verify(refreshToken, refToken, (err, decoded) => {
       if (err) {
-        throw { code: 403 }
+        console.error(err) // Log the error for debugging
+        throw { code: 403, message: 'Failed to verify refresh token' }
       }
       const userId = user[0]?.accounts_id
       const name = user[0]?.username
-      const email = user[0]?.email
-      const accessToken = jwt.sign({ userId, name, email }, accToken, {
+      const iat = new Date().getTime()
+      const accessToken = jwt.sign({ userId, name, iat }, accToken, {
         expiresIn: '12h',
       })
       res.json({ accessToken })
     })
   } catch (error) {
+    console.error(error) // Log the error for debugging
     res.status(error?.code ?? 500).json({
-      message: error,
+      message: error?.message ?? 'Internal server error',
     })
   }
 }

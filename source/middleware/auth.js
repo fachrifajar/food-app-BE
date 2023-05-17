@@ -25,23 +25,41 @@ const loginValidator = (req, res, next) => {
 const validateToken = (req, res, next) => {
   try {
     const authHeaders = req.headers['authorization']
-    const token = authHeaders && authHeaders.split(' ')[1]
-    // const { authorization } = req.headers
+    const token = authHeaders.split(' ')[1]
 
     if (authHeaders) {
       jwt.verify(token, accToken, (err, decoded) => {
-        // console.log(decoded)
         if (err) {
           throw { code: 401, message: 'Token error, please try again!' }
         }
-        // req.email = decoded.email
+
+        const currentTimestamp = Date.now()
+
+        const expirationTimestamp = decoded.iat + 20000
+
+        // console.log({ currentTimestamp, expirationTimestamp })
+
+        if (currentTimestamp > expirationTimestamp) {
+          const refreshToken = req.cookies.refreshToken
+
+          jwt.verify(refreshToken, refToken, (err, decoded) => {
+            const currentTimestampToken = Date.now()
+
+            const expirationTimestampToken = decoded.iat + 24 * 60 * 60 * 1000
+
+            const expMainToken = currentTimestamp > expirationTimestamp
+            const expRefToken = currentTimestampToken > expirationTimestampToken
+
+            if (expMainToken && expRefToken) {
+              throw { code: 401, message: 'Ref Token has expired' }
+            }
+          })
+        }
+
         next()
-        // if (Date.now() - 100000 > decoded.exp) {
-        //   throw { code: 401, message: 'Token Expired' }
-        // }
       })
     } else {
-      throw { code: 401, message: 'No Token Provide' }
+      throw { code: 401, message: 'No Token Provided' }
     }
   } catch (error) {
     res.status(error?.code ?? 500).json({
@@ -76,3 +94,63 @@ const validateRole = (req, res, next) => {
 }
 
 module.exports = { loginValidator, validateToken, validateRole }
+
+// const validateToken = (req, res, next) => {
+//   try {
+//     const authHeaders = req.headers['authorization']
+//     const token = authHeaders && authHeaders.split(' ')[1]
+
+//     if (authHeaders) {
+//       jwt.verify(token, accToken, (err, decoded) => {
+//         if (err) {
+//           throw { code: 401, message: 'Token error, please try again!' }
+//         }
+
+//         const currentTimestamp = Date.now()
+
+//         const expirationTimestamp = decoded.iat + 20000
+
+//         console.log({ currentTimestamp, expirationTimestamp })
+
+//         if (currentTimestamp > expirationTimestamp) {
+//           const refreshToken = req.cookies.refreshToken
+//           if (!refreshToken) {
+//             throw { code: 401, message: 'Token has expired and refresh token is not provided' }
+//           }
+
+//           // Verify the refresh token
+//           jwt.verify(refreshToken, refToken, (refreshErr, refreshDecoded) => {
+//             if (refreshErr) {
+//               throw { code: 401, message: 'Token has expired and refresh token is invalid' }
+//             }
+
+//             // Here, you can perform any additional checks on the refresh token, such as checking if it is associated with the user or if it's revoked.
+
+//             // Generate a new access token
+//             const newAccessToken = jwt.sign(
+//               {
+//                 id: refreshDecoded.id,
+//                 name: refreshDecoded.name,
+//                 email: refreshDecoded.email,
+//               },
+//               accToken,
+//               { expiresIn: '20s' }
+//             )
+
+//             // Set the new access token in the request headers or response, depending on your implementation
+
+//             next()
+//           })
+//         } else {
+//           next()
+//         }
+//       })
+//     } else {
+//       throw { code: 401, message: 'No Token Provided' }
+//     }
+//   } catch (error) {
+//     res.status(error?.code ?? 500).json({
+//       message: error?.message ?? error,
+//     })
+//   }
+// }
