@@ -17,21 +17,10 @@ To run this project :
 ```
 git clone https://github.com/fachrifajar/food-app-BE.git
 ```
-* Install NPM
-* Install Express
-* Install Nodemon
+
+```
+$ npm i 
+```
+
 * Set up .env 
 
-```
-$ npm i express
-$ npm i cors
-$ npm i dotenv
-$ npm i body-parser
-$ npm i helmet
-$ npm i node-input-validator
-$ npm i nodemon
-$ npm i postgres
-$ npm i uuid
-$ npm i xss-clean
-
-```
