@@ -24,49 +24,51 @@ const loginValidator = (req, res, next) => {
 
 const validateToken = (req, res, next) => {
   try {
-    const authHeaders = req.headers['authorization']
-    const token = authHeaders.split(' ')[1]
+    const authHeaders = req.headers['authorization'];
+    const token = authHeaders.split(' ')[1];
 
     if (authHeaders) {
       jwt.verify(token, accToken, (err, decoded) => {
         if (err) {
-          throw { code: 401, message: 'Token error, please try again!' }
+          const refreshToken = req.cookies.refreshToken;
+
+          if (refreshToken) {
+            jwt.verify(refreshToken, refToken, (err, decodedToken) => {
+              if (err) {
+                throw { code: 401, message: 'Refresh Token has expired' };
+              }
+              next();
+            });
+          } else {
+            throw { code: 401, message: 'Token has expired' };
+          }
+        } else {
+          const currentTimestamp = Date.now();
+          const expirationTimestamp = decoded.iat + 20000; // 20 seconds
+          
+          if (currentTimestamp > expirationTimestamp) {
+            throw { code: 401, message: 'Token has expired' };
+          }
+          
+          next();
         }
-
-        const currentTimestamp = Date.now()
-
-        const expirationTimestamp = decoded.iat + 20000
-
-        // console.log({ currentTimestamp, expirationTimestamp })
-
-        if (currentTimestamp > expirationTimestamp) {
-          const refreshToken = req.cookies.refreshToken
-
-          jwt.verify(refreshToken, refToken, (err, decoded) => {
-            const currentTimestampToken = Date.now()
-
-            const expirationTimestampToken = decoded.iat + 24 * 60 * 60 * 1000
-
-            const expMainToken = currentTimestamp > expirationTimestamp
-            const expRefToken = currentTimestampToken > expirationTimestampToken
-
-            if (expMainToken && expRefToken) {
-              throw { code: 401, message: 'Ref Token has expired' }
-            }
-          })
-        }
-
-        next()
-      })
+      });
     } else {
-      throw { code: 401, message: 'No Token Provided' }
+      throw { code: 401, message: 'No Token Provided' };
     }
   } catch (error) {
     res.status(error?.code ?? 500).json({
       message: error?.message ?? error,
-    })
+    });
   }
-}
+};
+
+
+
+
+
+
+
 
 const validateRole = (req, res, next) => {
   try {
