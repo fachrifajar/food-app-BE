@@ -41,7 +41,7 @@ const createUsersValidator = (req, res, next) => {
     username:
       'required|minLength:5|maxLength:25|regexUsername|namePassswordValidator',
     password: 'required|regexPass|minLength:8|maxLength:20',
-    profile_picture: req.body.profile_picture == '' ? 'required|url' : 'url',
+    // profile_picture: req.body.profile_picture == '' ? 'required|url' : 'url',
   })
 
   rules.check().then((matched) => {

@@ -291,6 +291,7 @@ const createUsers = async (req, res) => {
                 data: req.body.email,
               })
             } catch (error) {
+              console.error
               res.status(error?.code ?? 500).json({
                 message: error,
               })
