@@ -46,7 +46,7 @@ const login = async (req, res) => {
             message: `Success, User ${foundUsers[0].username} is logged in!`,
             data: {
               accessToken,
-              refreshToken,
+              // refreshToken,
               profilePicture: foundUsers[0]?.profile_picture,
               accounts_id: foundUsers[0]?.accounts_id,
             },
