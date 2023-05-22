@@ -46,7 +46,7 @@ const login = async (req, res) => {
             message: `Success, User ${foundUsers[0].username} is logged in!`,
             data: {
               accessToken,
-              // refreshToken,
+              username: foundUsers[0].username,
               profilePicture: foundUsers[0]?.profile_picture,
               accounts_id: foundUsers[0]?.accounts_id,
             },
@@ -87,7 +87,7 @@ const refreshToken = async (req, res) => {
       const name = user[0]?.username
       const iat = new Date().getTime()
       const accessToken = jwt.sign({ userId, name, iat }, accToken, {
-        expiresIn: '12h',
+        expiresIn: '10s',
       })
       res.json({ accessToken })
     })
