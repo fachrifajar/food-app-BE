@@ -14,9 +14,13 @@ const getComments = async (req, res) => {
       recipes_id: id,
     })
 
-    res.json({
-      data: getCommentsData,
-    })
+    if (getCommentsData) {
+      res.json({
+        data: getCommentsData,
+      })
+    } else {
+      throw { code: 422, message: 'Data not found' }
+    }
   } catch (err) {
     res.status(err.code ?? 500).json({
       message: err,
