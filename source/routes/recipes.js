@@ -83,6 +83,8 @@ router.get(
   recipesController.getAllRecipes2
 ) //? sort by nama
 
+router.get('/search/comment/:id', recipesController.getComments)
+
 router.get('/search/myrecipe/:id', recipesController.getMyRecipes)
 
 // UPDATE
