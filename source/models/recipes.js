@@ -319,7 +319,7 @@ const validateRecipesId = async (params) => {
 const getComments = async (params) => {
   const { recipes_id } = params
 
-  return await db`SELECT accounts.accounts_id, accounts.username, accounts.profile_picture, accounts.email, comments.comment, comments.updated_at
+  return await db`SELECT accounts.accounts_id, accounts.username, accounts.profile_picture, accounts.email, comments.comment, comments.recipes_id, comments.updated_at
   FROM comments
   LEFT JOIN accounts ON accounts.accounts_id = comments.accounts_id
   WHERE recipes_id = ${recipes_id} 
