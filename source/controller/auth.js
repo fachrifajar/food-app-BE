@@ -83,10 +83,10 @@ const refreshToken = async (req, res) => {
         console.error(err) // Log the error for debugging
         throw { code: 403, message: 'Failed to verify refresh token' }
       }
-      const userId = user[0]?.accounts_id
+      const id = user[0]?.accounts_id
       const name = user[0]?.username
       const iat = new Date().getTime()
-      const accessToken = jwt.sign({ userId, name, iat }, accToken, {
+      const accessToken = jwt.sign({ id, name, iat }, accToken, {
         expiresIn: '10s',
       })
       res.json({ accessToken })

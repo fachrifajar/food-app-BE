@@ -542,6 +542,7 @@ const updateRecipes = async (req, res) => {
       comment,
       slug,
     } = req.body
+    console.log(id)
     console.log('test1')
     const getAllData = await models.getRecipesByRecipesID({ id })
 
@@ -553,129 +554,155 @@ const updateRecipes = async (req, res) => {
     console.log('test3')
     const getRole = await models.getRoles({ roleValidator })
     const isAdmin = getRole[0]?.role
+    console.log(req.body.comment)
 
-    const validateRecipesId = await models.validateRecipesId({
-      recipes_id: id,
-    })
-    const recipesIdvalidator = validateRecipesId[0]?.accounts_id
-
-    if (isAdmin == 'ADMIN' || roleValidator == recipesIdvalidator) {
-      console.log('MASUK')
-      if (!req.files) {
-        if (
-          (recipes_id || accounts_id || title || ingredients || video) !==
-            undefined &&
-          photo == undefined &&
-          comment == undefined
-        ) {
-          console.log('MASUK2')
-          if (getAllData.length == 0) {
-            throw { code: 400, message: 'accounts_ID not identified' }
+    console.log('test4')
+    if (comment == undefined) {
+      const validateRecipesId = await models.validateRecipesId({
+        recipes_id: id,
+      })
+      const recipesIdvalidator = validateRecipesId[0]?.accounts_id
+      if (isAdmin == 'ADMIN' || roleValidator == recipesIdvalidator) {
+        console.log('MASUK')
+        if (!req.files) {
+          if (
+            (recipes_id || accounts_id || title || ingredients || video) !==
+              undefined &&
+            photo == undefined &&
+            comment == undefined
+          ) {
+            console.log('MASUK2')
+            if (getAllData.length == 0) {
+              throw { code: 400, message: 'accounts_ID not identified' }
+            }
+            console.log('MASUK3')
+            console.log(getAllData)
+            const editRecipes = await models.editRecipes({
+              title,
+              ingredients,
+              id,
+              slug: title ? titleConvert : null,
+              getAllData: getAllData[0],
+            })
           }
-          console.log('MASUK3')
-          console.log(getAllData)
-          const editRecipes = await models.editRecipes({
-            title,
-            ingredients,
-            id,
-            slug: title ? titleConvert : null,
-            getAllData: getAllData[0],
-          })
+        } else {
+          const checkPhtID = await models.checkPhotosByID({ id })
+
+          let file = req.files.photo
+          let mimeType = file.mimetype.split('/')[1]
+          let allowedFile = ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG']
+          let MB = 2
+
+          if (allowedFile.find((item) => item == mimeType)) {
+            if (file.size > MB * 1024 * 1024) {
+              const message =
+                `Upload failed. ${file.name.toString()} is over the file size limit of ${MB} MB.`.replaceAll(
+                  ',',
+                  ', '
+                )
+              throw { code: 413, message }
+            }
+
+            cloudinary.v2.uploader.destroy(
+              checkPhtID[0].photo,
+              function (error, result) {
+                console.log(result, error)
+              }
+            )
+
+            cloudinary.v2.uploader.upload(
+              file.tempFilePath,
+              { public_id: uuidv4() },
+              async function (error, result) {
+                if (error) {
+                  // throw 'Upload failed'
+                  throw new Error(400)
+                }
+
+                await models.editPhotos({
+                  title,
+                  ingredients,
+                  id,
+                  slug: title ? titleConvert : null,
+                  getAllData: getAllData[0],
+                  photo: result.public_id,
+                })
+              }
+            )
+            res.json({
+              status: 'true',
+              message: 'photo updated',
+              data: {
+                id,
+                ...req.body,
+              },
+            })
+            return
+          } else {
+            const message =
+              `Upload failed. Only ${allowedFile.toString()} files allowed.`.replaceAll(
+                ',',
+                ', '
+              )
+            throw { code: 422, message }
+          }
         }
+
+        res.json({
+          message: 'Data updated',
+          data: {
+            id,
+            ...req.body,
+          },
+        })
+      } else {
+        throw {
+          code: 401,
+          message:
+            'Access not granted, only admin & valid user can access this section!',
+        }
+      }
+    } else {
+      const validateCommentsId = await models.checkComment({ id })
+      const commentsIdvalidator = validateCommentsId[0]?.accounts_id
+      console.log('xxx')
+      if (isAdmin == 'ADMIN' || roleValidator == commentsIdvalidator) {
         console.log('MASUK4')
+
+        console.log(req.body)
         if (
           (recipes_id || accounts_id || title || ingredients || video) ==
             undefined &&
           photo == undefined &&
           comment !== undefined
         ) {
+          console.log('MASUK5')
           const checkCommID = await models.checkComment({ id })
 
           if (checkCommID.length !== 1) {
             throw { code: 400, message: 'comments_ID not identified' }
           }
-
+          console.log('MASUK6')
           const editComments = await models.editComments({
             comment,
             checkCommID: checkCommID[0],
             id,
           })
-        }
-      } else {
-        const checkPhtID = await models.checkPhotosByID({ id })
 
-        let file = req.files.photo
-        let mimeType = file.mimetype.split('/')[1]
-        let allowedFile = ['png', 'jpg', 'jpeg', 'PNG', 'JPG', 'JPEG']
-        let MB = 2
-
-        if (allowedFile.find((item) => item == mimeType)) {
-          if (file.size > MB * 1024 * 1024) {
-            const message =
-              `Upload failed. ${file.name.toString()} is over the file size limit of ${MB} MB.`.replaceAll(
-                ',',
-                ', '
-              )
-            throw { code: 413, message }
-          }
-
-          cloudinary.v2.uploader.destroy(
-            checkPhtID[0].photo,
-            function (error, result) {
-              console.log(result, error)
-            }
-          )
-
-          cloudinary.v2.uploader.upload(
-            file.tempFilePath,
-            { public_id: uuidv4() },
-            async function (error, result) {
-              if (error) {
-                // throw 'Upload failed'
-                throw new Error(400)
-              }
-
-              await models.editPhotos({
-                title,
-                ingredients,
-                id,
-                slug: title ? titleConvert : null,
-                getAllData: getAllData[0],
-                photo: result.public_id,
-              })
-            }
-          )
           res.json({
-            status: 'true',
-            message: 'photo updated',
+            message: 'Data updated',
             data: {
               id,
               ...req.body,
             },
           })
-          return
-        } else {
-          const message =
-            `Upload failed. Only ${allowedFile.toString()} files allowed.`.replaceAll(
-              ',',
-              ', '
-            )
-          throw { code: 422, message }
         }
-      }
-
-      res.json({
-        message: 'Data updated',
-        data: {
-          id,
-          ...req.body,
-        },
-      })
-    } else {
-      throw {
-        code: 401,
-        message:
-          'Access not granted, only admin & valid user can access this section!',
+      } else {
+        throw {
+          code: 401,
+          message:
+            'Access not granted, only admin & valid user can access this section!',
+        }
       }
     }
   } catch (err) {

@@ -250,7 +250,7 @@ const editVideos = async (params) => {
 const checkComment = async (params) => {
   const { id } = params
 
-  return await db`SELECT * FROM comments WHERE comments_id = ${id}`
+  return await db`SELECT * FROM comments WHERE id = ${id}`
 }
 
 const editComments = async (params) => {
@@ -259,7 +259,7 @@ const editComments = async (params) => {
   return await db`UPDATE comments
     SET comment = ${comment || checkCommID?.comment},
     updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
-    WHERE comments_id = ${id}`
+    WHERE id = ${id}`
 }
 
 const deleteRecipes = async (params) => {
