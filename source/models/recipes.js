@@ -295,13 +295,13 @@ const deletePhotos = async (params) => {
 const getCommentsByCommentsID = async (params) => {
   const { id } = params
 
-  return await db`SELECT * FROM comments WHERE comments_id = ${id}`
+  return await db`SELECT * FROM comments WHERE id = ${id}`
 }
 
 const deleteComments = async (params) => {
   const { id } = params
 
-  return await db`DELETE FROM comments WHERE comments_id = ${id}`
+  return await db`DELETE FROM comments WHERE id = ${id}`
 }
 
 const getRoles = async (params) => {
