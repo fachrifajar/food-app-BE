@@ -37,7 +37,7 @@ const createUsersValidator = (req, res, next) => {
   //password: 'required|regexPass|minLength:8|maxLength:20',
   const rules = new Validator(req.body, {
     email: 'required|email|minLength:3|maxLength:100',
-    phone_number: 'required|phoneNumber|minLength:7|maxLength:14',
+    phone_number: 'required|phoneNumber|minLength:7|maxLength:15',
     username:
       'required|minLength:5|maxLength:25|regexUsername|namePassswordValidator',
     password: 'required|regexPass|minLength:8|maxLength:20',

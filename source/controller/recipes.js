@@ -248,37 +248,6 @@ const getMyRecipes = async (req, res) => {
   }
 }
 
-// const addRecipes = async (req, res) => {
-//   try {
-//     const { accounts_id, title, ingredients, slug, photo, video } = req.body
-
-//     const roleValidator = req.accounts_id || null // middleware for roleValidator
-//     const getTitle = await models.checkRecipesByTitle({ title })
-
-//     let titleConvert = title.replace(/ /g, '-').toLowerCase()
-
-//     if (getTitle.length !== 0) {
-//       throw { code: 403, message: 'Title already exist' }
-//     }
-
-//     const addRecipes = await models.addRecipes({
-//       accounts_id: roleValidator,
-//       title,
-//       ingredients,
-//       slug: titleConvert,
-//     })
-//     res.json({
-//       message: 'data collected',
-//       data: req.body,
-//     })
-//   } catch (error) {
-//     const statusCode = error.code || 500
-//     res.status(statusCode).json({
-//       message: error.message || 'An error occurred',
-//     })
-//   }
-// }
-
 const addRecipes = async (req, res) => {
   try {
     const { accounts_id, title, ingredients, slug, photo, video } = req.body
@@ -657,15 +626,19 @@ const updateRecipes = async (req, res) => {
         })
       } else {
         throw {
-          code: 401,
+          code: 400,
           message:
             'Access not granted, only admin & valid user can access this section!',
         }
       }
     } else {
       const validateCommentsId = await models.checkComment({ id })
+      console.log(validateCommentsId)
       const commentsIdvalidator = validateCommentsId[0]?.accounts_id
       console.log('xxx')
+
+      console.log({ roleValidator })
+      console.log({ commentsIdvalidator })
       if (isAdmin == 'ADMIN' || roleValidator == commentsIdvalidator) {
         console.log('MASUK4')
 
@@ -699,7 +672,7 @@ const updateRecipes = async (req, res) => {
         }
       } else {
         throw {
-          code: 401,
+          code: 400,
           message:
             'Access not granted, only admin & valid user can access this section!',
         }
