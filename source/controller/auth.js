@@ -69,6 +69,7 @@ const login = async (req, res) => {
 
 const refreshToken = async (req, res) => {
   try {
+    // res.set('Access-Control-Allow-Origin', '*')
     const refreshToken = req.cookies.refreshToken
 
     if (!refreshToken) {

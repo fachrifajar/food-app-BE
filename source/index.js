@@ -11,6 +11,17 @@ const fileUpload = require('express-fileupload')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.setHeader('Access-Control-Allow-Credentials', true)
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
+  res.header(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  )
+  next()
+})
+
 //koneksi cookie-parser
 app.use(cookieParser())
 
@@ -19,14 +30,29 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
 //koneksi cors
-app.use(cors())
+// app.use(cors())
+
+// app.use(
+//   cors({
+//     origin: 'http://localhost:3000',
+//     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//   })
+// )
+
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true, // Allow sending cookies
+  })
+)
 
 // koneksi middleware
 app.use(middleware.logRequest)
 // app.use(express.json()) // body-parser, menggunakan middleware
 
 // koneksi helmet
-app.use(helmet())
+// app.use(helmet())
 
 // koneksi xss
 app.use(xss())
