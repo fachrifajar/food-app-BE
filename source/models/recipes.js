@@ -38,7 +38,7 @@ LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id
 const getAllRecipesRelationPaginationSort = async (params) => {
   const { sort, limit, page, sortType } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug, recipes.love
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at  ${
@@ -85,7 +85,7 @@ const getMyRecipe = async (params) => {
 const getAllRecipesRelationPagination = async (params) => {
   const { limit, page } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug, recipes.love
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at   LIMIT ${limit} OFFSET ${
@@ -97,7 +97,7 @@ const getAllRecipesRelationPagination = async (params) => {
 const getAllRecipesRelationSort = async (params) => {
   const { sort, sortType } = params
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug
+  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug, recipes.love
   FROM recipes 
   LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at 
