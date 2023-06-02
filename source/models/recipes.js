@@ -27,7 +27,7 @@ const getRecipesByNameRelation = async (params) => {
 
   return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, 
   recipes.photo,
-  recipes.created_at, recipes.slug
+  recipes.created_at, recipes.slug, recipes.love
 FROM recipes 
 LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
   WHERE recipes.slug ILIKE '%' || ${title} || '%'
@@ -326,6 +326,57 @@ const getComments = async (params) => {
   `
 }
 
+const addLoveRecipe = async (params) => {
+  const { recipes_id, id } = params
+
+  await db`UPDATE recipes
+  SET love = love + 1
+  WHERE recipes_id = ${recipes_id}`
+
+  await db`UPDATE accounts
+  SET love = array_append(love, ${recipes_id}::numeric)
+  WHERE accounts_id = ${id};`
+}
+
+const addUnloveRecipe = async (params) => {
+  const { recipes_id, id } = params
+
+  await db`UPDATE recipes
+  SET love = love - 1
+  WHERE recipes_id = ${recipes_id}`
+
+  await db`UPDATE accounts
+  SET love = array_remove(love, ${recipes_id}::numeric)
+  WHERE accounts_id = ${id};`
+}
+
+const checkLoveRecipe = async (params) => {
+  const { recipes_id, id } = params
+
+  const result = await db`SELECT EXISTS (
+    SELECT 1
+    FROM accounts
+    WHERE accounts_id = ${id}
+      AND ${recipes_id} = ANY(love)
+  ) AS value_exists;`
+
+  return result[0].value_exists
+}
+
+const getLoveRecipe = async (params) => {
+  const { id } = params
+
+  return await db`SELECT *
+  FROM recipes
+  WHERE recipes_id = ANY(SELECT unnest(love) FROM accounts WHERE accounts_id = ${id})`
+}
+
+const getLoveRecipeCount = async (params) => {
+  const { recipes_id } = params
+
+  return await db`SELECT love FROM recipes WHERE recipes_id = ${recipes_id}`
+}
+
 module.exports = {
   getAllRecipesRelation,
   getRecipesByNameRelation,
@@ -366,4 +417,9 @@ module.exports = {
   getMyRecipe,
   getMyRecipePagination,
   getComments,
+  addLoveRecipe,
+  addUnloveRecipe,
+  checkLoveRecipe,
+  getLoveRecipe,
+  getLoveRecipeCount,
 }

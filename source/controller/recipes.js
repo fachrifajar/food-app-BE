@@ -1009,6 +1009,91 @@ const updateSave = async (req, res) => {
   }
 }
 
+const updateLoveRecipe = async (req, res) => {
+  try {
+    const { recipes_id } = req.body
+
+    const id = req.accounts_id || null
+
+    const checkLove = await models.checkLoveRecipe({ recipes_id, id })
+
+    if (checkLove === true) {
+      const remove = await models.addUnloveRecipe({ recipes_id, id })
+      res.status(201).json({
+        code: 201,
+        message: 'Success remove love recipes',
+        data: req.body,
+      })
+    } else {
+      const add = await models.addLoveRecipe({ recipes_id, id })
+      res.status(201).json({
+        code: 201,
+        message: 'Success add love recipes',
+        data: req.body,
+      })
+    }
+  } catch (error) {
+    console.error(error)
+    res.status(error?.code ?? 500).json({
+      message: error,
+    })
+  }
+}
+
+const getLoveRecipe = async (req, res) => {
+  try {
+    const id = req.accounts_id || null
+
+    const response = await models.getLoveRecipe({ id })
+
+    if (response.length) {
+      res.json({
+        data: response,
+      })
+    } else {
+      throw { code: 422, message: 'Data not found' }
+    }
+  } catch (error) {
+    res.status(error.code ?? 500).json({
+      message: error,
+    })
+  }
+}
+
+const getCountLove = async (req, res) => {
+  try {
+    const { recipes_id } = req.params
+
+    const response = await models.getLoveRecipeCount({ recipes_id })
+
+    res.json({
+      data: response[0]?.love,
+    })
+  } catch (error) {
+    res.status(error.code ?? 500).json({
+      message: error,
+    })
+  }
+}
+
+const getValidateLove = async (req, res) => {
+  try {
+    const { recipes_id } = req.params
+
+    const id = req.accounts_id || null
+
+    const checkLove = await models.checkLoveRecipe({ recipes_id, id })
+
+    res.json({
+      data: checkLove,
+    })
+  } catch (error) {
+    res.status(error.code ?? 500).json({
+      message: error,
+    })
+  }
+}
+
 module.exports = {
   getAllRecipes,
   getAllRecipes2,
@@ -1024,4 +1109,8 @@ module.exports = {
   getMyRecipes,
   updateSave,
   getComments,
+  updateLoveRecipe,
+  getLoveRecipe,
+  getCountLove,
+  getValidateLove,
 }

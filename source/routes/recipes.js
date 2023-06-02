@@ -69,6 +69,13 @@ router.post(
   recipesController.addComments
 )
 
+router.patch(
+  '/add/like',
+  authMiddleware.validateToken,
+  authMiddleware.validateRole,
+  recipesController.updateLoveRecipe
+)
+
 // READ, NEW UPDATE SORT BY sortType, "1" => sort by title ASC, "2" => sort by created_at DESC
 router.get(
   '/search/:titlez?',
@@ -86,6 +93,22 @@ router.get(
 router.get('/search/comment/:id', recipesController.getComments)
 
 router.get('/search/myrecipe/:id', recipesController.getMyRecipes)
+
+router.get(
+  '/love-recipe',
+  authMiddleware.validateToken,
+  authMiddleware.validateRole,
+  recipesController.getLoveRecipe
+)
+
+router.get('/love-recipe/count/:recipes_id', recipesController.getCountLove)
+
+router.get(
+  '/love-recipe/validate/:recipes_id',
+  authMiddleware.validateToken,
+  authMiddleware.validateRole,
+  recipesController.getValidateLove
+)
 
 // UPDATE
 router.patch(
