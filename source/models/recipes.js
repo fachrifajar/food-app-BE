@@ -36,23 +36,35 @@ LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id
 
 //checked
 const getAllRecipesRelationPaginationSort = async (params) => {
-  const { sort, limit, page, sortType } = params
+  const { sort, limit, page, sortType } = params;
+  let orderBy;
 
-  return await db`SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug, recipes.love
-  FROM recipes 
-  LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
-  GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at  ${
-    sort
-      ? sortType === '1'
-        ? db`ORDER BY recipes.title ASC`
-        : sortType === '2'
-        ? db`ORDER BY recipes.created_at DESC`
-        : // : sortType === '3'
-          // ? db`ORDER BY recipes.likes DESC`
-          db`ORDER BY recipes.created_at ASC`
-      : db`ORDER BY recipes.created_at ASC`
-  } LIMIT ${limit} OFFSET ${limit * (page - 1)}`
-}
+  if (sortType === "titleAsc") {
+    orderBy = db`ORDER BY recipes.title ASC`;
+  } else if (sortType === "titleDesc") {
+    orderBy = db`ORDER BY recipes.title DESC`;
+  } else if (sortType === "createdAsc") {
+    orderBy = db`ORDER BY recipes.created_at ASC`;
+  } else if (sortType === "createdDesc") {
+    orderBy = db`ORDER BY recipes.created_at DESC`;
+  } else if (sortType === "loveAsc") {
+    orderBy = db`ORDER BY recipes.love ASC`;
+  } else if (sortType === "loveDesc") {
+    orderBy = db`ORDER BY recipes.love DESC`;
+  } else {
+    orderBy = db`ORDER BY recipes.created_at ASC`;
+  }
+
+  return await db`
+    SELECT recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.photo, recipes.created_at, recipes.slug, recipes.love
+    FROM recipes 
+    LEFT JOIN accounts ON recipes.accounts_id = accounts.accounts_id 
+    GROUP BY recipes.recipes_id, accounts.username, recipes.title, recipes.ingredients, recipes.created_at  
+    ${sort ? orderBy : db`ORDER BY recipes.created_at ASC`}
+    LIMIT ${limit} OFFSET ${limit * (page - 1)}
+  `;
+};
+
 
 const getMyRecipePagination = async (params) => {
   const { userId, limit, page, sort } = params
