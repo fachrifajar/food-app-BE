@@ -225,12 +225,13 @@ const getAllRecipes2 = async (req, res) => {
 const getMyRecipes = async (req, res) => {
   try {
     const { id } = req.params
-    const { page, limit, sort } = req.query
+    const { page, limit, sort, sortType } = req.query
     const getUsersData = await models.getMyRecipePagination({
       userId: id,
       page,
       limit,
       sort,
+      sortType,
     })
     const totalDatas = await models.getMyRecipe({ userId: id })
 

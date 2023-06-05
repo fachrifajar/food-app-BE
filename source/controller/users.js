@@ -400,6 +400,17 @@ const updateUsersPartial = async (req, res) => {
                   profile_picture: result.public_id,
                   id,
                 })
+
+                res.json({
+                  status: 'true',
+                  message: 'data updated',
+                  data: {
+                    id,
+                    ...req.body,
+                    profile_picture: result.public_id,
+                  },
+                })
+                return
               }
             )
           } else {
@@ -434,6 +445,17 @@ const updateUsersPartial = async (req, res) => {
                       profile_picture: result.public_id,
                       id,
                     })
+
+                    res.json({
+                      status: 'true',
+                      message: 'data updated',
+                      data: {
+                        id,
+                        ...req.body,
+                        profile_picture: result.public_id,
+                      },
+                    })
+                    return
                   } catch (error) {
                     res.status(500).json({
                       message: error.message,
@@ -443,16 +465,6 @@ const updateUsersPartial = async (req, res) => {
               }
             )
           }
-
-          res.json({
-            status: 'true',
-            message: 'data updated',
-            data: {
-              id,
-              ...req.body,
-            },
-            profile_picture: req.files.profile_picture.name,
-          })
         }
       }
     } else {
