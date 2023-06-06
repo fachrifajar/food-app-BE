@@ -630,9 +630,22 @@ const updateComments = async (req, res) => {
 const deleteRecipes = async (req, res) => {
   try {
     const { id } = req.params
-    const validator = await models.getRecipesByRecipesID({ id })
+    console.log(id)
+    const validator = await models.getRecipesByRecipesID({ recipes_id: id })
+    console.log(validator)
 
     if (validator.length !== 0) {
+      const checkPhtID = await models.checkPhotosByID({ recipes_id: id })
+      console.log(checkPhtID)
+      cloudinary.v2.uploader.destroy(
+        checkPhtID[0].photo,
+        function (error, result) {
+          console.log(result, error)
+        }
+      )
+
+      await models.deleteCommentsByRecipesId({ id })
+
       await models.deleteRecipes({ id })
     } else {
       res.status(400).json({
@@ -644,9 +657,10 @@ const deleteRecipes = async (req, res) => {
       message: 'DATA DELETED!',
     })
   } catch (err) {
+    console.error(err)
     res.status(500).json({
       message: 'Server Error',
-      serverMessage: err,
+      serverMessage: err.message,
     })
   }
 }

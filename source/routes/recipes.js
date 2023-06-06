@@ -12,6 +12,15 @@ router.post(
   '/add',
   authMiddleware.validateToken,
   authMiddleware.validateRole,
+  middlewareUpload.fileExtLimiter([
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.PNG',
+    '.JPG',
+    '.JPEG',
+  ]),
+  middlewareUpload.fileSizeLimiter,
   middleware.createRecipesValidator,
   recipesController.addRecipes
 )

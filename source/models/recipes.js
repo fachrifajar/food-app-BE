@@ -294,6 +294,12 @@ const deleteRecipes = async (params) => {
   return await db`DELETE FROM recipes WHERE recipes_id = ${id}`
 }
 
+const deleteCommentsByRecipesId = async (params) => {
+  const { id } = params
+
+  return await db`DELETE FROM comments WHERE recipes_id = ${id}`
+}
+
 const getRecipesVidByVidID = async (params) => {
   const { id } = params
 
@@ -448,4 +454,5 @@ module.exports = {
   checkLoveRecipe,
   getLoveRecipe,
   getLoveRecipeCount,
+  deleteCommentsByRecipesId,
 }
