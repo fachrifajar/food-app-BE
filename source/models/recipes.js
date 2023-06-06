@@ -174,16 +174,17 @@ const checkAccByID = async (params) => {
 }
 
 const addRecipes = async (params) => {
-  const { accounts_id, title, ingredients, slug, roleValidator, video, photo } =
-    params
+  const { accounts_id, title, ingredients, slug, photo } = params
 
-  return await db`INSERT INTO recipes ("accounts_id", "title", "ingredients", "slug", "video", "photo") VALUES (${accounts_id}, ${title}, ${ingredients}, ${slug}, ${video}, ${photo})`
+  return await db`INSERT INTO recipes ("accounts_id", "title", "ingredients", "slug", "photo") VALUES (${accounts_id}, ${title}, ${ingredients}, ${slug}, ${photo})`
 }
 
 const checkRecipesByTitle = async (params) => {
   const { title } = params
 
-  return await db`SELECT * FROM recipes WHERE title = ${title}`
+  return await db`SELECT *
+  FROM recipes
+  WHERE LOWER(title) = LOWER(${title})`
 }
 
 const checkRecipesIDbyRecipesID = async (params) => {

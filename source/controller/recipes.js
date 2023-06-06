@@ -251,7 +251,7 @@ const getMyRecipes = async (req, res) => {
 
 const addRecipes = async (req, res) => {
   try {
-    const { accounts_id, title, ingredients, slug, photo, video } = req.body
+    const { title, ingredients, photo } = req.body
 
     const roleValidator = req.accounts_id || null // middleware for roleValidator
     const getTitle = await models.checkRecipesByTitle({ title })
@@ -262,36 +262,6 @@ const addRecipes = async (req, res) => {
       throw { code: 403, message: 'Title already exist' }
     }
 
-    // if (req.files) {
-    //   let fileVideo = req.files.video
-
-    //   cloudinary.v2.uploader.upload(
-    //     fileVideo.tempFilePath,
-    //     { resource_type: 'video', public_id: uuidv4() },
-    //     async function (error, result) {
-    //       try {
-    //         if (error) {
-    //           throw 'Upload failed'
-    //         }
-    //         const videoResult = result.public_id
-
-    //         // await models.addVideos({
-    //         //   recipes_id,
-    //         //   video: result.public_id,
-    //         //   accounts_id: roleValidator,
-    //         // })
-    //         // res.json({
-    //         //   message: 'video uploaded',
-    //         //   data: req.body,
-    //         // })
-    //       } catch (error) {
-    //         res.status(error.code ?? 500).json({
-    //           message: error,
-    //         })
-    //       }
-    //     }
-    //   )
-    // }
     console.log('TESS')
 
     if (req.files) {
@@ -312,9 +282,7 @@ const addRecipes = async (req, res) => {
               title,
               ingredients,
               slug: titleConvert,
-              // video: videoResult,
               photo: photoResult,
-              video,
             })
             res.json({
               message: 'data collected',
@@ -328,20 +296,6 @@ const addRecipes = async (req, res) => {
         }
       )
     }
-
-    // const addRecipes = await models.addRecipes({
-    //   accounts_id: roleValidator,
-    //   title,
-    //   ingredients,
-    //   slug: titleConvert,
-    //   // video: videoResult,
-    //   video,
-    //   photo: photoResult,
-    // })
-    // res.json({
-    //   message: 'data collected',
-    //   data: req.body,
-    // })
   } catch (error) {
     const statusCode = error.code || 500
     res.status(statusCode).json({
@@ -517,15 +471,20 @@ const updateRecipes = async (req, res) => {
 
     const recipesIdvalidator = validateRecipesId[0]?.accounts_id
 
+    let titleConvert
+    if (title) {
+      titleConvert = title.replace(/ /g, '-').toLowerCase()
+    }
+    const getTitle = await models.checkRecipesByTitle({ title })
+
+    if (getTitle.length !== 0) {
+      throw { code: 403, message: 'Title already exist' }
+    }
+
     if (isAdmin == 'ADMIN' || roleValidator == recipesIdvalidator) {
       if (!req.files) {
         if (getAllData.length == 0) {
           throw { code: 400, message: 'recipes_id not identified' }
-        }
-
-        let titleConvert
-        if (title) {
-          titleConvert = title.replace(/ /g, '-').toLowerCase()
         }
 
         const editRecipes = await models.editRecipes({

@@ -5,6 +5,7 @@ const middleware = require('../middleware/recipes')
 const middlewareUpload = require('../middleware/upload')
 const redisMiddleware = require('../middleware/redis')
 const authMiddleware = require('../middleware/auth')
+const uploadMiddleware = require('../middleware/upload')
 
 // CREATE
 router.post(
@@ -115,6 +116,15 @@ router.patch(
   '/edit/:recipes_id',
   authMiddleware.validateToken,
   authMiddleware.validateRole,
+  uploadMiddleware.fileExtLimiter([
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.PNG',
+    '.JPG',
+    '.JPEG',
+  ]),
+  uploadMiddleware.fileSizeLimiter,
   middleware.updateRecipesValidator,
   recipesController.updateRecipes
 )
