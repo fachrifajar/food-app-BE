@@ -217,9 +217,9 @@ const addComments = async (params) => {
 }
 
 const getRecipesByRecipesID = async (params) => {
-  const { id } = params
+  const { recipes_id } = params
 
-  return await db`SELECT * FROM recipes WHERE recipes_id = ${id}`
+  return await db`SELECT * FROM recipes WHERE recipes_id = ${recipes_id}`
 }
 
 const getRecipesBySlug = async (params) => {
@@ -229,14 +229,14 @@ const getRecipesBySlug = async (params) => {
 }
 
 const editRecipes = async (params) => {
-  const { title, ingredients, id, getAllData, slug } = params
+  const { title, ingredients, recipes_id, getAllData, slug } = params
 
   return await db`UPDATE recipes
     SET title = ${title || getAllData?.title},
       ingredients = ${ingredients || getAllData?.ingredients},
       slug = ${slug || getAllData?.slug},
       updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
-    WHERE recipes_id = ${id} `
+    WHERE recipes_id = ${recipes_id} `
 }
 
 const checkVideosByID = async (params) => {
@@ -246,13 +246,13 @@ const checkVideosByID = async (params) => {
 }
 
 const checkPhotosByID = async (params) => {
-  const { id } = params
+  const { recipes_id } = params
 
-  return await db`SELECT * FROM recipes WHERE recipes_id = ${id}`
+  return await db`SELECT * FROM recipes WHERE recipes_id = ${recipes_id}`
 }
 
 const editPhotos = async (params) => {
-  const { title, ingredients, id, getAllData, slug, photo } = params
+  const { title, ingredients, recipes_id, getAllData, slug, photo } = params
 
   return await db`UPDATE recipes
     SET title = ${title || getAllData?.title},
@@ -260,7 +260,7 @@ const editPhotos = async (params) => {
       slug = ${slug || getAllData?.slug},
       photo = ${photo || getAllData?.photo},
       updated_at = NOW() AT TIME ZONE 'Asia/Jakarta'
-    WHERE recipes_id = ${id} `
+    WHERE recipes_id = ${recipes_id} `
 }
 
 const editVideos = async (params) => {

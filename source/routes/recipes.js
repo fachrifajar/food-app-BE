@@ -112,11 +112,19 @@ router.get(
 
 // UPDATE
 router.patch(
-  '/edit/:id',
+  '/edit/:recipes_id',
   authMiddleware.validateToken,
   authMiddleware.validateRole,
   middleware.updateRecipesValidator,
   recipesController.updateRecipes
+)
+
+router.patch(
+  '/edit/comment/:id',
+  authMiddleware.validateToken,
+  authMiddleware.validateRole,
+  middleware.updateRecipesValidator,
+  recipesController.updateComments
 )
 
 // UPDATE
