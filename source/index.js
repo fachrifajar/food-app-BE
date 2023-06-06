@@ -12,7 +12,7 @@ const path = require('path')
 const cookieParser = require('cookie-parser')
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.setHeader('Access-Control-Allow-Origin', 'https://food-app-fe-gno9.vercel.app')
   res.setHeader('Access-Control-Allow-Credentials', true)
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
   res.header(
