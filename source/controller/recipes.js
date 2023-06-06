@@ -255,11 +255,12 @@ const addRecipes = async (req, res) => {
 
     const roleValidator = req.accounts_id || null // middleware for roleValidator
     const getTitle = await models.checkRecipesByTitle({ title })
-
+    console.log(getTitle)
+    console.log('getTitle.length !== 0', getTitle.length !== 0)
     let titleConvert = title.replace(/ /g, '-').toLowerCase()
     let photoResult
     if (getTitle.length !== 0) {
-      throw { code: 403, message: 'Title already exist' }
+      throw { code: 403, message: 'Title already exists' }
     }
 
     console.log('TESS')
@@ -277,13 +278,14 @@ const addRecipes = async (req, res) => {
             }
             photoResult = result.public_id
             console.log('photoResult---', photoResult)
-            const addRecipes = await models.addRecipes({
+            await models.addRecipes({
               accounts_id: roleValidator,
               title,
               ingredients,
               slug: titleConvert,
               photo: photoResult,
             })
+            console.log('test bawah')
             res.json({
               message: 'data collected',
               data: req.body,
@@ -297,9 +299,9 @@ const addRecipes = async (req, res) => {
       )
     }
   } catch (error) {
-    const statusCode = error.code || 500
-    res.status(statusCode).json({
-      message: error.message || 'An error occurred',
+    console.error(error)
+    res.status(error.code ?? 500).json({
+      message: error || 'Server Error',
     })
   }
 }
