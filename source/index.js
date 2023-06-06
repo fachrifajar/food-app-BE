@@ -42,7 +42,7 @@ app.use(bodyParser.json())
 
 app.use(
   cors({
-    origin: 'https://food-app-fe-gno9.vercel.app/',
+    origin: 'https://food-app-fe-gno9.vercel.app',
     // origin: 'http://localhost:3000',
     credentials: true, // Allow sending cookies
   })
