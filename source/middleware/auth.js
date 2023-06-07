@@ -44,8 +44,8 @@ const validateToken = (req, res, next) => {
           }
         } else {
           const currentTimestamp = Date.now()
-          // const expirationTimestamp = decoded.iat + 20000 // 20 seconds
-          const expirationTimestamp = decoded.iat + 86400000 // 1 day
+          const expirationTimestamp = decoded.iat + 20000 // 20 seconds
+          // const expirationTimestamp = decoded.iat + 86400000 // 1 day
           if (currentTimestamp > expirationTimestamp) {
             throw { code: 401, message: 'Token has expired' }
           }
