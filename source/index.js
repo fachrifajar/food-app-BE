@@ -11,21 +11,21 @@ const fileUpload = require('express-fileupload')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 
-// app.use((req, res, next) => {
-//   res.setHeader(
-//     'Access-Control-Allow-Origin',
-//     'https://food-app-fe-gno9.vercel.app'
-//   )
-//   // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
-//   // res.setHeader('Access-Control-Allow-Origin', '*')
-//   res.setHeader('Access-Control-Allow-Credentials', true)
-//   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
-//   res.setHeader(
-//     'Access-Control-Allow-Headers',
-//     'Origin, X-Requested-With, Content-Type, Accept'
-//   )
-//   next()
-// })
+app.use((req, res, next) => {
+  res.setHeader(
+    'Access-Control-Allow-Origin',
+    'https://food-app-fe-gno9.vercel.app'
+  )
+  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+  // res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Credentials', true)
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept'
+  )
+  next()
+})
 
 //koneksi cookie-parser
 app.use(cookieParser())
