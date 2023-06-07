@@ -11,21 +11,21 @@ const fileUpload = require('express-fileupload')
 const path = require('path')
 const cookieParser = require('cookie-parser')
 
-app.use((req, res, next) => {
-  res.setHeader(
-    'Access-Control-Allow-Origin',
-    'https://food-app-fe-gno9.vercel.app'
-  )
-  // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
-  // res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content-Type, Accept'
-  )
-  next()
-})
+// app.use((req, res, next) => {
+//   // res.setHeader(
+//   //   'Access-Control-Allow-Origin',
+//   //   'https://food-app-fe-gno9.vercel.app'
+//   // )
+//   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+//   // res.setHeader('Access-Control-Allow-Origin', '*')
+//   res.setHeader('Access-Control-Allow-Credentials', true)
+//   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
+//   res.setHeader(
+//     'Access-Control-Allow-Headers',
+//     'Origin, X-Requested-With, Content-Type, Accept'
+//   )
+//   next()
+// })
 
 //koneksi cookie-parser
 app.use(cookieParser())
@@ -47,8 +47,8 @@ app.use(bodyParser.json())
 
 app.use(
   cors({
-    origin: 'https://food-app-fe-gno9.vercel.app',
-    // origin: 'http://localhost:3000',
+    // origin: 'https://food-app-fe-gno9.vercel.app',
+    origin: 'http://localhost:3000',
     // origin: '*',
     credentials: true, // Allow sending cookies
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -60,7 +60,7 @@ app.use(middleware.logRequest)
 // app.use(express.json()) // body-parser, menggunakan middleware
 
 // koneksi helmet
-// app.use(helmet())
+app.use(helmet())
 
 // koneksi xss
 app.use(xss())
