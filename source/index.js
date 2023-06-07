@@ -12,11 +12,12 @@ const path = require('path')
 const cookieParser = require('cookie-parser')
 
 app.use((req, res, next) => {
-  res.setHeader(
-    'Access-Control-Allow-Origin',
-    'https://stirring-duckanoo-cdf74b.netlify.app'
-  )
+  // res.setHeader(
+  //   'Access-Control-Allow-Origin',
+  //   'https://food-app-fe-gno9.vercel.app'
+  // )
   // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
+  res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Credentials', true)
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE')
   res.header(
@@ -46,8 +47,9 @@ app.use(bodyParser.json())
 
 app.use(
   cors({
-    origin: 'https://stirring-duckanoo-cdf74b.netlify.app',
+    // origin: 'https://food-app-fe-gno9.vercel.app',
     // origin: 'http://localhost:3000',
+    origin: '*',
     credentials: true, // Allow sending cookies
   })
 )
