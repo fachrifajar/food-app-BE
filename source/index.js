@@ -12,10 +12,10 @@ const path = require('path')
 const cookieParser = require('cookie-parser')
 
 app.use((req, res, next) => {
-  // res.setHeader(
-  //   'Access-Control-Allow-Origin',
-  //   'https://food-app-fe-gno9.vercel.app'
-  // )
+  res.setHeader(
+    'Access-Control-Allow-Origin',
+    'https://food-app-fe-gno9.vercel.app'
+  )
   // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Credentials', true)
@@ -47,10 +47,11 @@ app.use(bodyParser.json())
 
 app.use(
   cors({
-    // origin: 'https://food-app-fe-gno9.vercel.app',
+    origin: 'https://food-app-fe-gno9.vercel.app',
     // origin: 'http://localhost:3000',
-    origin: '*',
+    // origin: '*',
     credentials: true, // Allow sending cookies
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 )
 
