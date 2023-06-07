@@ -24,8 +24,8 @@ const login = async (req, res) => {
               iat: new Date().getTime(),
             },
             accToken,
-            // { expiresIn: '20s' }
-            { expiresIn: '1d' }  //edit for testing
+            { expiresIn: '20s' }
+            // { expiresIn: '1d' }  //edit for testing
           )
           const refreshToken = jwt.sign(
             {
