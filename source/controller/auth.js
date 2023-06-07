@@ -71,6 +71,7 @@ const refreshToken = async (req, res) => {
   try {
     // res.set('Access-Control-Allow-Origin', '*')
     const refreshToken = req.cookies.refreshToken
+    // res.setHeader('Access-Control-Allow-Origin', '*')
 
     if (!refreshToken) {
       throw { code: 401, message: 'Refresh token not provided' }
