@@ -34,22 +34,9 @@ app.use(cookieParser())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json())
 
-//koneksi cors
-// app.use(cors())
-
-// app.use(
-//   cors({
-//     origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST', 'PATCH', 'DELETE'],
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//   })
-// )
-
 app.use(
   cors({
-    // origin: 'https://food-app-fe-gno9.vercel.app',
-    origin: ['http://localhost:3000', 'https://food-app-fe-gno9.vercel.app'],
-    // origin: '*',
+    origin: ['http://localhost:3000', 'https://food-hub-v2.vercel.app'],
     credentials: true, // Allow sending cookies
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
